@@ -1,15 +1,16 @@
 /**
  * Server-side Census API helpers.
  *
- * BOUNDARY SOURCE:
- *   TIGERweb REST — Tracts_Blocks MapServer for tracts,
- *   PUMA_TAD_TAZ_UGA_ZCTA MapServer for ZCTAs.
+ * BOUNDARY SOURCES (tried in order):
+ *   1. Esri Living Atlas — public ArcGIS Online feature services.
+ *      - Tracts:   USA_Census_Tracts  (2020 geom; STATEFP, COUNTYFP, TRACTCE, GEOID)
+ *      - ZIP:      USA_ZIP_Code_Areas_anaylsis (USPS ZIP polys, annual; note Esri typo)
+ *      - Counties: USA_Census_Counties (confirmed working)
  *
- *   Key fields: STATE, COUNTY, GEOID, AREALAND (NOT STATEFP/COUNTYFP/ALAND)
- *   Tracts: layer 0 (current), 4 (ACS 2025), 7 (ACS 2024), 10 (2020 Census)
- *
- * COUNTY RESOLUTION:
- *   Esri Living Atlas USA_Census_Counties (confirmed working).
+ *   2. TIGERweb REST (fallback) — Census Bureau's own MapServer.
+ *      - Tracts: Tracts_Blocks/MapServer layers 0/4/7/10
+ *      - ZCTAs:  PUMA_TAD_TAZ_UGA_ZCTA/MapServer layers 7/4
+ *      Key fields: STATE, COUNTY, GEOID, AREALAND
  *
  * DEMOGRAPHICS:
  *   Census ACS 5-Year API (public, no key).
@@ -19,10 +20,17 @@
 
 import type { FeatureCollection, Feature, Geometry } from "geojson";
 
+// Esri Living Atlas — public feature services, no API key
+// Service names verified 2026-04-12 via ArcGIS REST directory search.
+const ESRI_BASE = "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services";
+const ESRI_TRACTS = `${ESRI_BASE}/USA_Census_Tracts/FeatureServer/0`;
+const ESRI_ZIP = `${ESRI_BASE}/USA_ZIP_Code_Areas_anaylsis/FeatureServer/0`; // Esri's own typo in "anaylsis"
+const ESRI_COUNTIES = `${ESRI_BASE}/USA_Census_Counties/FeatureServer/0`;
+
+// TIGERweb — fallback
 const TIGER_BASE = "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb";
 const TRACTS_SVC = `${TIGER_BASE}/Tracts_Blocks/MapServer`;
 const ZCTA_SVC = `${TIGER_BASE}/PUMA_TAD_TAZ_UGA_ZCTA/MapServer`;
-const ESRI_COUNTIES = "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/USA_Census_Counties/FeatureServer/0";
 
 let db: any = null;
 try { db = require("./db").prisma; } catch { /* no DB */ }
@@ -111,27 +119,54 @@ export async function fetchBoundaries(
 }
 
 // =========================================================================
-// Census Tracts — TIGERweb/Tracts_Blocks/MapServer
+// Census Tracts — Esri Living Atlas (primary) → TIGERweb (fallback)
 //
-// Layer 0 = current, 4 = ACS 2025, 7 = ACS 2024, 10 = Census 2020
-// Fields: STATE, COUNTY, TRACT, GEOID, BASENAME, NAME, AREALAND, AREAWATER
+// Esri USA_Census_Tracts: STATEFP, COUNTYFP, TRACTCE, GEOID, POPULATION
+// TIGERweb layers 0/4/7/10: STATE, COUNTY, TRACT, GEOID, AREALAND
 // =========================================================================
 
 async function fetchTracts(
   stateFips: string,
   countyFips: string
 ): Promise<FeatureCollection> {
+  // 1. Try Esri Living Atlas (fast, reliable, GeoJSON support)
+  const esriResult = await fetchTractsEsri(stateFips, countyFips);
+  if (esriResult.features.length > 0) return esriResult;
+
+  // 2. Fall back to TIGERweb
   const where = `STATE='${stateFips}' AND COUNTY='${countyFips}'`;
   const outFields = "GEOID,STATE,COUNTY,TRACT,BASENAME,NAME,AREALAND,AREAWATER";
-
-  // Try layers in order: current (0), ACS 2025 (4), ACS 2024 (7), Census 2020 (10)
   for (const layer of [0, 4, 7, 10]) {
     const result = await queryTiger(TRACTS_SVC, layer, where, outFields);
     if (result.features.length > 0) return result;
   }
 
-  // Fallback: Census Bureau's CitySDK static GeoJSON on GitHub
+  // 3. Last resort: Census Bureau's CitySDK static GeoJSON on GitHub
   return fetchTractsStatic(stateFips, countyFips);
+}
+
+async function fetchTractsEsri(
+  stateFips: string,
+  countyFips: string
+): Promise<FeatureCollection> {
+  // Try both field name patterns (current uses STATEFP/COUNTYFP)
+  for (const where of [
+    `STATEFP='${stateFips}' AND COUNTYFP='${countyFips}'`,
+    `STATE_FIPS='${stateFips}' AND CNTY_FIPS='${countyFips}'`,
+  ]) {
+    try {
+      const url =
+        `${ESRI_TRACTS}/query?where=${encodeURIComponent(where)}` +
+        `&outFields=*&outSR=4326&f=geojson&returnGeometry=true`;
+      const res = await fetch(url);
+      if (!res.ok) continue;
+      const data = await res.json();
+      if (data.type === "FeatureCollection" && data.features?.length > 0) {
+        return normalize(data);
+      }
+    } catch { continue; }
+  }
+  return EMPTY_FC;
 }
 
 const CITYSDK = "https://raw.githubusercontent.com/uscensusbureau/citysdk/master/v2/GeoJSON/500k/2020";
