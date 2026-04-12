@@ -445,5 +445,5 @@ function geoIdFor(f: Feature | undefined, view: View): string | null {
   if (view === "tract") {
     return p.GEOID ?? p.geoid ?? null;
   }
-  return p.ZCTA5CE20 ?? p.GEOID20 ?? p.ZCTA5CE10 ?? p.zip ?? null;
+  return p.ZIP_CODE ?? p.ZIP ?? p.ZCTA5CE20 ?? p.ZCTA5 ?? p.BASENAME ?? p.GEOID20 ?? p.GEOID ?? null;
 }

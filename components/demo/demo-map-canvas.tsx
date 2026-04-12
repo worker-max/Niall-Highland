@@ -79,7 +79,8 @@ function generateCounts(
     if (!id) continue;
 
     const aland = Number(
-      f.properties?.ALAND ?? f.properties?.ALAND20 ?? 1_000_000
+      f.properties?.ALAND ?? f.properties?.AREALAND ?? f.properties?.ALAND20
+      ?? f.properties?.SQMI ?? 1_000_000
     );
     const urbanWeight = 1 / Math.max(aland / 1_000_000, 0.1);
     const jitter = 0.3 + seededRandom(seedHash(id)) * 1.4;
@@ -616,5 +617,6 @@ function geoIdFor(f: Feature | undefined, type: "tract" | "zip"): string | null 
   if (!f?.properties) return null;
   const p = f.properties;
   if (type === "tract") return p.GEOID ?? p.geoid ?? null;
-  return p.ZCTA5CE20 ?? p.GEOID20 ?? p.ZCTA5CE10 ?? p.zip ?? null;
+  // Esri ZIP service uses ZIP_CODE; TIGERweb uses ZCTA5/GEOID; normalize sets ZIP_CODE
+  return p.ZIP_CODE ?? p.ZIP ?? p.ZCTA5CE20 ?? p.ZCTA5 ?? p.BASENAME ?? p.GEOID20 ?? p.GEOID ?? null;
 }

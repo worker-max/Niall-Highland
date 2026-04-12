@@ -330,12 +330,18 @@ function normalize(fc: FeatureCollection): FeatureCollection {
     if (!f.properties) f.properties = {};
     const p = f.properties;
     // Map AREALAND → ALAND for consistency with components
-    if (p.AREALAND != null && p.ALAND == null) p.ALAND = p.AREALAND;
-    if (p.AREALAND20 != null && p.ALAND == null) p.ALAND = p.AREALAND20;
-    // Ensure GEOID
+    if (p.AREALAND != null && p.ALAND == null) p.ALAND = Number(p.AREALAND);
+    if (p.AREALAND20 != null && p.ALAND == null) p.ALAND = Number(p.AREALAND20);
+    if (p.SQMI != null && p.ALAND == null) p.ALAND = Number(p.SQMI) * 2589988; // sqmi → sqm
+    // Ensure GEOID for tracts
     if (!p.GEOID) p.GEOID = p.GEOID20 ?? p.GEO_ID ?? null;
-    // Ensure ZCTA field
-    if (!p.ZCTA5CE20) p.ZCTA5CE20 = p.ZCTA5CE ?? p.BASENAME ?? p.GEOID ?? null;
+    // Normalize ZIP/ZCTA identifier → ZIP_CODE
+    if (!p.ZIP_CODE) {
+      p.ZIP_CODE = p.ZIP_CODE ?? p.ZIP ?? p.ZCTA5CE20 ?? p.ZCTA5CE ?? p.ZCTA5
+        ?? p.BASENAME ?? p.GEOID20 ?? p.GEOID ?? null;
+    }
+    // Strip leading/trailing whitespace from ZIP
+    if (typeof p.ZIP_CODE === "string") p.ZIP_CODE = p.ZIP_CODE.trim();
   }
   return fc;
 }
