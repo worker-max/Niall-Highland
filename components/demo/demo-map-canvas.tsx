@@ -124,23 +124,25 @@ const QUARTER_TOTALS: Record<string, number> = {
 // Boundary styles
 // =========================================================================
 
-// Tract boundaries: thin solid lines
+// Tract boundaries: dark forest green, thin solid lines
+const TRACT_COLOR = "#1a4d2e";
 const TRACT_OUTLINE_STYLE: L.PathOptions = {
-  color: "#0e6e60",
+  color: TRACT_COLOR,
   weight: 1.5,
-  opacity: 0.7,
+  opacity: 0.8,
   fillColor: "transparent",
   fillOpacity: 0,
 };
 
-// ZIP boundaries: thick dashed lines
+// ZIP boundaries: dark magenta, thick dashed lines
+const ZIP_COLOR = "#8b1a6b";
 const ZIP_OUTLINE_STYLE: L.PathOptions = {
-  color: "#515e77",
+  color: ZIP_COLOR,
   weight: 3,
-  opacity: 0.8,
+  opacity: 0.85,
   fillColor: "transparent",
   fillOpacity: 0,
-  dashArray: "8 4",
+  dashArray: "10 5",
 };
 
 // =========================================================================
@@ -256,9 +258,9 @@ export function DemoMapCanvas({ layers }: Props) {
       const id = geoIdFor(f, "tract");
       const value = id ? counts[id] ?? 0 : 0;
       return {
-        color: "#0e6e60",
+        color: TRACT_COLOR,
         weight: 1.5,
-        opacity: 0.7,
+        opacity: 0.8,
         fillColor: colorForValue(value, maxCount),
         fillOpacity: 0.55,
       };
@@ -275,10 +277,10 @@ export function DemoMapCanvas({ layers }: Props) {
       const id = geoIdFor(f, "zip");
       const value = id ? counts[id] ?? 0 : 0;
       return {
-        color: "#515e77",
+        color: ZIP_COLOR,
         weight: 3,
-        opacity: 0.8,
-        dashArray: "8 4",
+        opacity: 0.85,
+        dashArray: "10 5",
         fillColor: colorForValue(value, maxCount),
         fillOpacity: 0.55,
       };
@@ -305,14 +307,15 @@ export function DemoMapCanvas({ layers }: Props) {
         (layer as L.Path).on({
           mouseover: (e: L.LeafletMouseEvent) => {
             const target = e.target as L.Path;
+            const hoverColor = type === "tract" ? TRACT_COLOR : ZIP_COLOR;
             target.setStyle({
               weight: type === "tract" ? 3 : 5,
               opacity: 1,
-              color: "#0e6e60",
-              fillOpacity: layers.showData ? 0.8 : 0.15,
+              color: hoverColor,
+              fillOpacity: layers.showData ? 0.8 : 0.12,
               fillColor: layers.showData
                 ? colorForValue(counts[id] ?? 0, maxCount)
-                : "#c6f7ec",
+                : hoverColor,
             });
             target.bringToFront();
           },
@@ -440,13 +443,13 @@ export function DemoMapCanvas({ layers }: Props) {
           <div className="space-y-1">
             {layers.showTracts && (
               <div className="flex items-center gap-2">
-                <div className="h-0.5 w-6 bg-teal-700 opacity-70" />
+                <div className="h-0.5 w-6" style={{ backgroundColor: TRACT_COLOR }} />
                 <span className="text-[10px] text-ink-600">Census Tracts</span>
               </div>
             )}
             {layers.showZips && (
               <div className="flex items-center gap-2">
-                <div className="h-0.5 w-6 border-t-2 border-dashed border-ink-600 opacity-80" />
+                <div className="h-0.5 w-6 border-t-2 border-dashed" style={{ borderColor: ZIP_COLOR }} />
                 <span className="text-[10px] text-ink-600">ZIP Codes</span>
               </div>
             )}
