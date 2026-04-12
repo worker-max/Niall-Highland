@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 /**
- * Debug endpoint — test TIGER API connectivity and see exactly what comes back.
+ * Debug endpoint — discover TIGER layer structure and correct field names.
  * Hit: /api/census/debug?stateFips=45&countyFips=019
  */
 export async function GET(req: Request) {
@@ -11,47 +11,54 @@ export async function GET(req: Request) {
 
   const results: Record<string, any> = {};
 
-  // Test 1: tigerWMS_Current, tracts, f=geojson
-  const tigUrls = [
+  const tests = [
+    // Discover layers in tigerWMS_Current
     {
-      label: "tigerWMS_Current layer 14 geojson",
-      url: `https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Current/MapServer/14/query?where=${encodeURIComponent(`STATE='${stateFips}' AND COUNTY='${countyFips}'`)}&outFields=GEOID,NAME,ALAND&outSR=4326&f=geojson&resultRecordCount=3&returnGeometry=true`,
+      label: "tigerWMS_Current layers",
+      url: `https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Current/MapServer?f=json`,
+    },
+    // Try STATEFP / COUNTYFP field names (modern TIGER convention)
+    {
+      label: "layer 8 STATEFP/COUNTYFP geojson",
+      url: `https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Current/MapServer/8/query?where=${encodeURIComponent(`STATEFP='${stateFips}' AND COUNTYFP='${countyFips}'`)}&outFields=*&outSR=4326&f=geojson&resultRecordCount=2&returnGeometry=true`,
     },
     {
-      label: "tigerWMS_Current layer 14 json",
-      url: `https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Current/MapServer/14/query?where=${encodeURIComponent(`STATE='${stateFips}' AND COUNTY='${countyFips}'`)}&outFields=GEOID,NAME,ALAND&outSR=4326&f=json&resultRecordCount=3&returnGeometry=true`,
+      label: "layer 14 STATEFP/COUNTYFP geojson",
+      url: `https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Current/MapServer/14/query?where=${encodeURIComponent(`STATEFP='${stateFips}' AND COUNTYFP='${countyFips}'`)}&outFields=*&outSR=4326&f=geojson&resultRecordCount=2&returnGeometry=true`,
+    },
+    // Try with 20 suffix (Census 2020 vintage)
+    {
+      label: "layer 8 STATEFP20/COUNTYFP20",
+      url: `https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Current/MapServer/8/query?where=${encodeURIComponent(`STATEFP20='${stateFips}' AND COUNTYFP20='${countyFips}'`)}&outFields=*&outSR=4326&f=geojson&resultRecordCount=2&returnGeometry=true`,
+    },
+    // Try 1=1 query to see field names (get one record)
+    {
+      label: "layer 8 get fields (1=1)",
+      url: `https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Current/MapServer/8/query?where=1%3D1&outFields=*&outSR=4326&f=json&resultRecordCount=1&returnGeometry=false`,
     },
     {
-      label: "tigerWMS_Current layer 8 geojson",
-      url: `https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Current/MapServer/8/query?where=${encodeURIComponent(`STATE='${stateFips}' AND COUNTY='${countyFips}'`)}&outFields=GEOID,NAME,ALAND&outSR=4326&f=geojson&resultRecordCount=3&returnGeometry=true`,
+      label: "layer 14 get fields (1=1)",
+      url: `https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Current/MapServer/14/query?where=1%3D1&outFields=*&outSR=4326&f=json&resultRecordCount=1&returnGeometry=false`,
     },
+    // Try Tracts_Blocks service
     {
-      label: "tigerWMS_Current layer 8 json",
-      url: `https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Current/MapServer/8/query?where=${encodeURIComponent(`STATE='${stateFips}' AND COUNTY='${countyFips}'`)}&outFields=GEOID,NAME,ALAND&outSR=4326&f=json&resultRecordCount=3&returnGeometry=true`,
+      label: "Tracts_Blocks service layers",
+      url: `https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Tracts_Blocks/MapServer?f=json`,
     },
+    // Try ZCTA service
     {
-      label: "tigerWMS_Census2020 layer 10 geojson",
-      url: `https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Census2020/MapServer/10/query?where=${encodeURIComponent(`STATE='${stateFips}' AND COUNTY='${countyFips}'`)}&outFields=GEOID,NAME,ALAND&outSR=4326&f=geojson&resultRecordCount=3&returnGeometry=true`,
-    },
-    {
-      label: "Census2020 Tracts layer 6 json",
-      url: `https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Census2020/MapServer/6/query?where=${encodeURIComponent(`STATE='${stateFips}' AND COUNTY='${countyFips}'`)}&outFields=GEOID,NAME,ALAND&outSR=4326&f=json&resultRecordCount=3&returnGeometry=true`,
-    },
-    {
-      label: "Service directory",
-      url: `https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb?f=json`,
+      label: "PUMA_TAD_TAZ_UGA_ZCTA layers",
+      url: `https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/PUMA_TAD_TAZ_UGA_ZCTA/MapServer?f=json`,
     },
   ];
 
-  for (const t of tigUrls) {
+  for (const t of tests) {
     try {
       const res = await fetch(t.url);
       const text = await res.text();
       results[t.label] = {
         status: res.status,
-        contentType: res.headers.get("content-type"),
-        bodyPreview: text.slice(0, 500),
-        bodyLength: text.length,
+        bodyPreview: text.slice(0, 800),
         url: t.url,
       };
     } catch (e: any) {
