@@ -64,29 +64,31 @@ export function readRichText(row: PageRow, key: string): string {
 export function readSelect(row: PageRow, key: string): string | null {
   if (!hasProps(row)) return null;
   const p = row.properties[key];
-  if (p?.type === "select") return p.select?.name ?? null;
-  if (p?.type === "status") return p.status?.name ?? null;
+  if (p?.type === "select" && p.select && "name" in p.select) return p.select.name ?? null;
+  if (p?.type === "status" && p.status && "name" in p.status) return p.status.name ?? null;
   return null;
 }
 
 export function readMultiSelect(row: PageRow, key: string): string[] {
   if (!hasProps(row)) return [];
   const p = row.properties[key];
-  if (p?.type === "multi_select") return p.multi_select.map((s: any) => s.name);
+  if (p?.type === "multi_select" && Array.isArray(p.multi_select)) {
+    return p.multi_select.map((s: any) => s.name);
+  }
   return [];
 }
 
 export function readNumber(row: PageRow, key: string): number | null {
   if (!hasProps(row)) return null;
   const p = row.properties[key];
-  if (p?.type === "number") return p.number;
+  if (p?.type === "number" && typeof p.number === "number") return p.number;
   return null;
 }
 
 export function readCheckbox(row: PageRow, key: string): boolean {
   if (!hasProps(row)) return false;
   const p = row.properties[key];
-  return p?.type === "checkbox" ? p.checkbox : false;
+  return p?.type === "checkbox" && typeof p.checkbox === "boolean" ? p.checkbox : false;
 }
 
 export function readDate(row: PageRow, key: string): Date | null {

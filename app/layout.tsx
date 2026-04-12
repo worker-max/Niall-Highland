@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
+// On Vercel, swap this back to next/font/google Inter for optimal loading:
+//   import { Inter } from "next/font/google";
+//   const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+//   Then add className={inter.variable} to <html>.
+// Using system font stack here for zero-dependency local builds.
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://homehealthtools.com"),
@@ -42,7 +41,7 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider>
-      <html lang="en" className={inter.variable}>
+      <html lang="en">
         <body className="min-h-screen font-sans antialiased">{children}</body>
       </html>
     </ClerkProvider>

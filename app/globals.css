@@ -47,3 +47,19 @@ body {
     @apply text-sm text-ink-500;
   }
 }
+
+/* Leaflet custom tooltip styling */
+.map-tooltip {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid #d5dae3 !important;
+  border-radius: 6px !important;
+  padding: 6px 10px !important;
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+  color: #384052 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.map-tooltip::before {
+  border-top-color: rgba(255, 255, 255, 0.95) !important;
+}

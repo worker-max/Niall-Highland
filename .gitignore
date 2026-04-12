@@ -43,3 +43,5 @@ prisma/migrations/dev.db*
 
 # typescript
 *.tsbuildinfo
+.next/
+node_modules/
