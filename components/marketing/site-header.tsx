@@ -11,6 +11,9 @@ export function SiteHeader() {
           </span>
         </Link>
         <nav className="hidden items-center gap-8 md:flex">
+          <Link href="/demo" className="text-sm font-medium text-teal-700 hover:text-teal-900">
+            Live Demo
+          </Link>
           <Link href="/#pricing" className="text-sm font-medium text-ink-700 hover:text-teal-900">
             Pricing
           </Link>

@@ -28,12 +28,12 @@ export default function HomePage() {
               <Link href="/signup" className="btn-primary">
                 Start free quarter
               </Link>
-              <Link href="#pricing" className="btn-secondary">
+              <Link href="/demo" className="btn-secondary">
+                See live demo
+              </Link>
+              <Link href="#pricing" className="btn-ghost">
                 See pricing
               </Link>
-              <span className="text-sm text-ink-500">
-                Card required. First quarter free. Cancel anytime.
-              </span>
             </div>
           </div>
         </div>
