@@ -1,29 +1,30 @@
 import { NextResponse } from "next/server";
 
-const ESRI = "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services";
+const ESRI = "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services";
 
 export async function GET() {
   const results: Record<string, any> = {};
 
-  // Test many possible Esri Living Atlas Census service names
+  // Esri Living Atlas Census service names
+  // Verified service names (2026-04-12):
+  //   Tracts:   USA_Census_Tracts (STATEFP, COUNTYFP, TRACTCE, GEOID)
+  //   ZIP:      USA_ZIP_Code_Areas_anaylsis (note Esri's own typo)
+  //   Counties: USA_Census_Counties (STATE_FIPS, COUNTY_FIPS)
   const serviceTests = [
-    // Tracts
-    `${ESRI}/USA_Census_2020_Tracts/FeatureServer/0`,
-    `${ESRI}/USA_Tracts/FeatureServer/0`,
-    `${ESRI}/USA_Census_Tract_Boundaries/FeatureServer/0`,
-    `${ESRI}/USA_Boundaries_Census_Tracts/FeatureServer/0`,
-    `${ESRI}/USA_Census_Tract_Areas_analysis_trim/FeatureServer/0`,
-    `${ESRI}/USA_Census_2020_Census_Tracts/FeatureServer/0`,
-    // ZCTAs
-    `${ESRI}/USA_Census_2020_ZCTA5/FeatureServer/0`,
-    `${ESRI}/USA_ZCTA5/FeatureServer/0`,
-    `${ESRI}/USA_ZIP_Code_Areas/FeatureServer/0`,
-    `${ESRI}/USA_Boundaries_ZIP_Code_Areas/FeatureServer/0`,
-    `${ESRI}/USA_Census_2020_ZCTA/FeatureServer/0`,
-    // Counties
+    // CONFIRMED WORKING — Tracts
+    `${ESRI}/USA_Census_Tracts/FeatureServer/0`,
+    // CONFIRMED WORKING — ZIP/ZCTA
+    `${ESRI}/USA_ZIP_Code_Areas_anaylsis/FeatureServer/0`,
+    // CONFIRMED WORKING — Counties
     `${ESRI}/USA_Census_Counties/FeatureServer/0`,
-    `${ESRI}/USA_Counties/FeatureServer/0`,
-    `${ESRI}/USA_Boundaries_Counties/FeatureServer/0`,
+    // Other Census services on same org (for reference)
+    `${ESRI}/USA_Census_BlockGroups/FeatureServer/0`,
+    `${ESRI}/USA_Census_States/FeatureServer/0`,
+    `${ESRI}/USA_Census_Populated_Places/FeatureServer/0`,
+    `${ESRI}/USA_Census_2020_DHC_Total_Population/FeatureServer/0`,
+    // Previously guessed names (likely 404 — kept for verification)
+    `${ESRI}/USA_Census_2020_Tracts/FeatureServer/0`,
+    `${ESRI}/USA_Census_2020_ZCTA5/FeatureServer/0`,
   ];
 
   for (const svc of serviceTests) {

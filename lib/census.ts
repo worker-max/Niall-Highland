@@ -191,9 +191,9 @@ async function fetchTractsStatic(
 }
 
 // =========================================================================
-// ZCTAs — TIGERweb/PUMA_TAD_TAZ_UGA_ZCTA/MapServer
+// ZIP/ZCTA — Esri Living Atlas (primary) → TIGERweb (fallback)
 //
-// Need spatial query (ZCTAs don't have county fields).
+// Both require spatial query (ZIPs/ZCTAs don't have county fields).
 // First get county envelope from Esri Counties, then intersect.
 // =========================================================================
 
@@ -211,8 +211,26 @@ async function fetchZcta(
     spatialReference: { wkid: 4326 },
   });
 
-  // Try layers 7 (detailed), 4 on the ZCTA service
-  // Must include where=1=1 and inSR=4326 for spatial queries
+  // 1. Try Esri Living Atlas ZIP boundaries
+  try {
+    const url =
+      `${ESRI_ZIP}/query` +
+      `?where=${encodeURIComponent("1=1")}` +
+      `&geometry=${encodeURIComponent(geometry)}` +
+      `&geometryType=esriGeometryEnvelope` +
+      `&inSR=4326` +
+      `&spatialRel=esriSpatialRelIntersects` +
+      `&outFields=*&outSR=4326&f=geojson&returnGeometry=true`;
+    const res = await fetch(url);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.type === "FeatureCollection" && data.features?.length > 0) {
+        return normalize(data);
+      }
+    }
+  } catch { /* fall through to TIGERweb */ }
+
+  // 2. Fall back to TIGERweb ZCTA service
   for (const layer of [7, 4]) {
     const url =
       `${ZCTA_SVC}/${layer}/query` +
@@ -224,7 +242,6 @@ async function fetchZcta(
       `&outFields=GEOID,ZCTA5,BASENAME,NAME,AREALAND,AREAWATER` +
       `&outSR=4326&returnGeometry=true`;
 
-    // Try GeoJSON first, then Esri JSON
     for (const fmt of ["geojson", "json"]) {
       try {
         const res = await fetch(`${url}&f=${fmt}`);
