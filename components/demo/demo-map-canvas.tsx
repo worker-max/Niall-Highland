@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
-import { MapContainer, TileLayer, GeoJSON, Polyline, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, GeoJSON, useMap } from "react-leaflet";
+import { TrafficOverlay } from "./traffic-overlay";
 import L from "leaflet";
 import type { FeatureCollection, Feature } from "geojson";
 import type { DemographicProfile } from "@/lib/census";
@@ -452,6 +453,9 @@ export function DemoMapCanvas({ layers }: Props) {
             data={zipGeo} style={zipStyle as any} onEachFeature={makeHandler("zip")} />
         )}
 
+        {/* Traffic flow overlay */}
+        {layers.showTraffic && <TrafficOverlay period={layers.trafficPeriod} />}
+
         <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png" maxZoom={20} pane="overlayPane" />
         <FitBounds tractGeo={tractGeo} zipGeo={zipGeo} />
       </MapContainer>
@@ -469,6 +473,27 @@ export function DemoMapCanvas({ layers }: Props) {
                 <div className="mt-0.5 text-[9px] text-ink-500">{bps[i]}</div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Traffic legend */}
+      {layers.showTraffic && (
+        <div className="absolute top-4 left-4 z-[1000] rounded-lg bg-white/90 px-3 py-2 shadow-card backdrop-blur">
+          <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-ink-500">
+            Traffic — {layers.trafficPeriod === "am" ? "8:00 AM Rush" : "4:30 PM Rush"}
+          </div>
+          <div className="space-y-1">
+            {["Free flow", "Moderate", "Heavy", "Severe"].map((label, i) => (
+              <div key={label} className="flex items-center gap-2">
+                <div className="h-1 w-5 rounded" style={{ backgroundColor: ["#22c55e", "#eab308", "#f97316", "#ef4444"][i] }} />
+                <span className="text-[10px] text-ink-600">{label}</span>
+              </div>
+            ))}
+            <div className="flex items-center gap-2 mt-1 pt-1 border-t border-ink-100">
+              <span style={{ color: "#888", fontSize: "12px" }}>&#9654;</span>
+              <span className="text-[10px] text-ink-500">Arrow = flow direction</span>
+            </div>
           </div>
         </div>
       )}
