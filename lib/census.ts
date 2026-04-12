@@ -1,32 +1,36 @@
 /**
  * Server-side Census API helpers.
  *
- * Two APIs, both public, no keys required:
- *   1. TIGER Web REST — boundary GeoJSON for tracts and ZCTAs
- *   2. ACS 5-Year — demographic variables by geography
+ * BOUNDARY SOURCES (tried in order):
+ *   1. Esri Living Atlas — public ArcGIS Online feature services for
+ *      Census tracts and ZCTAs. Reliable, fast, returns clean GeoJSON.
+ *   2. TIGERweb Tracts_Blocks — Census Bureau's own REST service (fallback).
+ *
+ * DEMOGRAPHIC SOURCE:
+ *   Census ACS 5-Year API — public, no key required.
  *
  * All results are cached in Postgres when DATABASE_URL is configured.
- * When no database is available (e.g. demo mode), the app still works —
- * it just fetches from Census on every request.
- *
- * --- TIGER Web layer reference ---
- * Base: https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Current/MapServer
- *   Layer 14 = Census Tracts       (has STATE + COUNTY fields)
- *   Layer 2  = ZCTAs               (no county field — requires spatial query)
- *   Layer 86 = Counties            (used to get county envelope for ZCTA spatial query)
+ * When no database is available the app still works — it just fetches live.
  */
 
-import type { FeatureCollection, Feature, Geometry, GeoJsonProperties } from "geojson";
+import type { FeatureCollection, Feature, Geometry } from "geojson";
 
+// Esri Living Atlas — public feature services, no API key
+const ESRI_TRACTS =
+  "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/USA_Census_2020_Tracts/FeatureServer/0/query";
+const ESRI_ZCTA =
+  "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/USA_Census_2020_ZCTA5/FeatureServer/0/query";
+
+// TIGERweb as fallback
 const TIGER =
-  "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Current/MapServer";
+  "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb";
 
 // Try to import prisma — gracefully handle missing DATABASE_URL
 let db: any = null;
 try {
   db = require("./db").prisma;
 } catch {
-  // No database configured — caching disabled, API still works
+  // No database — caching disabled
 }
 
 // =========================================================================
@@ -59,22 +63,23 @@ export async function resolveCountyFips(
   const stateFips = stateAbbrToFips(stateAbbr);
   if (!stateFips) return null;
 
+  // Use Esri Living Atlas counties
   const safeName = countyName.toUpperCase().replace(/'/g, "''");
-  const where = `STATE='${stateFips}' AND UPPER(NAME) LIKE '${safeName}%'`;
-
+  const where = `STATE_FIPS='${stateFips}' AND UPPER(NAME) LIKE '${safeName}%'`;
   const url =
-    `${TIGER}/86/query?where=${encodeURIComponent(where)}` +
-    `&outFields=STATE,COUNTY,NAME&returnGeometry=false&f=json`;
+    `https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/USA_Census_Counties/FeatureServer/0/query` +
+    `?where=${encodeURIComponent(where)}&outFields=STATE_FIPS,CNTY_FIPS,NAME&returnGeometry=false&f=json`;
 
   try {
-    const res = await fetch(url, { next: { revalidate: 86400 } });
+    const res = await fetch(url);
     if (!res.ok) return null;
     const data = await res.json();
     const feature = data?.features?.[0];
     if (!feature) return null;
+    const a = feature.attributes ?? feature.properties;
     return {
-      stateFips: String(feature.attributes.STATE),
-      countyFips: String(feature.attributes.COUNTY),
+      stateFips: String(a.STATE_FIPS ?? a.STATEFP ?? a.STATE),
+      countyFips: String(a.CNTY_FIPS ?? a.COUNTYFP ?? a.COUNTY),
     };
   } catch {
     return null;
@@ -92,71 +97,78 @@ export async function fetchBoundaries(
   countyFips: string,
   type: "tract" | "zip"
 ): Promise<FeatureCollection> {
-  // Try cache first (only if DB is available)
+  // Check DB cache
   if (db) {
     try {
       const cached = await db.censusBoundaryCache.findUnique({
         where: { stateFips_countyFips_type: { stateFips, countyFips, type } },
       });
       if (cached) return cached.geojson as unknown as FeatureCollection;
-    } catch {
-      // DB unavailable — skip cache, fetch live
+    } catch { /* DB unavailable */ }
+  }
+
+  // Fetch from Esri Living Atlas (primary) then TIGER (fallback)
+  let geojson: FeatureCollection = EMPTY_FC;
+
+  if (type === "tract") {
+    geojson = await fetchTractsEsri(stateFips, countyFips);
+    if (geojson.features.length === 0) {
+      geojson = await fetchTractsTiger(stateFips, countyFips);
+    }
+  } else {
+    geojson = await fetchZctaEsri(stateFips, countyFips);
+    if (geojson.features.length === 0) {
+      geojson = await fetchZctaTiger(stateFips, countyFips);
     }
   }
 
-  let geojson: FeatureCollection;
-
-  if (type === "tract") {
-    geojson = await fetchTractBoundaries(stateFips, countyFips);
-  } else {
-    geojson = await fetchZctaBoundaries(stateFips, countyFips);
-  }
-
-  // Cache result if DB is available
+  // Cache
   if (db && geojson.features.length > 0) {
     try {
       await db.censusBoundaryCache.create({
         data: { stateFips, countyFips, type, geojson: geojson as any },
       });
-    } catch {
-      // Race condition or DB error — skip
-    }
+    } catch { /* race or DB error */ }
   }
 
-  return geojson.features.length > 0 ? geojson : EMPTY_FC;
+  return geojson;
 }
 
-async function fetchTractBoundaries(
+// =========================================================================
+// Esri Living Atlas — primary source
+// =========================================================================
+
+async function fetchTractsEsri(
   stateFips: string,
   countyFips: string
 ): Promise<FeatureCollection> {
-  // Try multiple layer IDs — TIGER services vary
-  const layerIds = [14, 8, 6];
+  // Try multiple field name patterns
+  const patterns = [
+    `STATE_FIPS='${stateFips}' AND CNTY_FIPS='${countyFips}'`,
+    `STATEFP='${stateFips}' AND COUNTYFP='${countyFips}'`,
+    `STATEFP20='${stateFips}' AND COUNTYFP20='${countyFips}'`,
+  ];
 
-  for (const layerId of layerIds) {
-    const where = `STATE='${stateFips}' AND COUNTY='${countyFips}'`;
-    const url =
-      `${TIGER}/${layerId}/query?where=${encodeURIComponent(where)}` +
-      `&outFields=GEOID,BASENAME,NAME,ALAND,AWATER,STATE,COUNTY,TRACT` +
-      `&outSR=4326&f=geojson&returnGeometry=true`;
-
+  for (const where of patterns) {
     try {
+      const url =
+        `${ESRI_TRACTS}?where=${encodeURIComponent(where)}` +
+        `&outFields=*&outSR=4326&f=geojson&returnGeometry=true`;
+
       const res = await fetch(url);
       if (!res.ok) continue;
 
       const text = await res.text();
+      const data = JSON.parse(text);
 
-      // Check if response is GeoJSON or Esri JSON
-      if (text.startsWith('{"type"')) {
-        const fc = JSON.parse(text) as FeatureCollection;
-        if (fc.features && fc.features.length > 0) return fc;
+      // Check if it's a GeoJSON FeatureCollection
+      if (data.type === "FeatureCollection" && data.features?.length > 0) {
+        return normalizeProperties(data);
       }
 
-      // Try parsing as Esri JSON and converting
-      const esri = JSON.parse(text);
-      if (esri.features && esri.features.length > 0) {
-        const converted = esriToGeoJson(esri);
-        if (converted.features.length > 0) return converted;
+      // Check if it's Esri JSON
+      if (data.features?.length > 0 && data.features[0].attributes) {
+        return normalizeProperties(esriToGeoJson(data));
       }
     } catch {
       continue;
@@ -166,68 +178,224 @@ async function fetchTractBoundaries(
   return EMPTY_FC;
 }
 
-async function fetchZctaBoundaries(
+async function fetchZctaEsri(
   stateFips: string,
   countyFips: string
 ): Promise<FeatureCollection> {
-  // Step 1: Get county bounding box
-  const envUrl =
-    `${TIGER}/86/query` +
-    `?where=${encodeURIComponent(`STATE='${stateFips}' AND COUNTY='${countyFips}'`)}` +
-    `&returnExtentOnly=true&outSR=4326&f=json`;
+  // ZCTAs don't have county fields — need spatial query using county envelope
+  const envelope = await getCountyEnvelope(stateFips, countyFips);
+  if (!envelope) return EMPTY_FC;
 
-  let envelope: { xmin: number; ymin: number; xmax: number; ymax: number };
-  try {
-    const envRes = await fetch(envUrl);
-    if (!envRes.ok) return EMPTY_FC;
-    const envData = await envRes.json();
-    envelope = envData.extent;
-    if (!envelope || !envelope.xmin) return EMPTY_FC;
-  } catch {
-    return EMPTY_FC;
-  }
-
-  // Step 2: Spatial query ZCTAs using the county envelope
   const geometry = JSON.stringify({
-    xmin: envelope.xmin,
-    ymin: envelope.ymin,
-    xmax: envelope.xmax,
-    ymax: envelope.ymax,
+    xmin: envelope[0], ymin: envelope[1],
+    xmax: envelope[2], ymax: envelope[3],
     spatialReference: { wkid: 4326 },
   });
 
-  const layerIds = [2, 4];
-  for (const layerId of layerIds) {
+  try {
     const url =
-      `${TIGER}/${layerId}/query` +
-      `?geometry=${encodeURIComponent(geometry)}` +
+      `${ESRI_ZCTA}?geometry=${encodeURIComponent(geometry)}` +
       `&geometryType=esriGeometryEnvelope` +
       `&spatialRel=esriSpatialRelIntersects` +
-      `&outFields=GEOID,GEOID20,ZCTA5CE20,BASENAME,ALAND,ALAND20,AWATER20` +
-      `&outSR=4326&f=geojson&returnGeometry=true`;
+      `&outFields=*&outSR=4326&f=geojson&returnGeometry=true`;
 
+    const res = await fetch(url);
+    if (!res.ok) return EMPTY_FC;
+
+    const text = await res.text();
+    const data = JSON.parse(text);
+
+    if (data.type === "FeatureCollection" && data.features?.length > 0) {
+      return normalizeProperties(data);
+    }
+    if (data.features?.length > 0 && data.features[0].attributes) {
+      return normalizeProperties(esriToGeoJson(data));
+    }
+  } catch { /* fall through */ }
+
+  return EMPTY_FC;
+}
+
+async function getCountyEnvelope(
+  stateFips: string,
+  countyFips: string
+): Promise<[number, number, number, number] | null> {
+  const patterns = [
+    `STATE_FIPS='${stateFips}' AND CNTY_FIPS='${countyFips}'`,
+    `STATEFP='${stateFips}' AND COUNTYFP='${countyFips}'`,
+  ];
+
+  for (const where of patterns) {
     try {
+      const url =
+        `https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/USA_Census_Counties/FeatureServer/0/query` +
+        `?where=${encodeURIComponent(where)}&returnExtentOnly=true&outSR=4326&f=json`;
+
       const res = await fetch(url);
       if (!res.ok) continue;
-
-      const text = await res.text();
-
-      if (text.startsWith('{"type"')) {
-        const fc = JSON.parse(text) as FeatureCollection;
-        if (fc.features && fc.features.length > 0) return fc;
-      }
-
-      const esri = JSON.parse(text);
-      if (esri.features && esri.features.length > 0) {
-        const converted = esriToGeoJson(esri);
-        if (converted.features.length > 0) return converted;
+      const data = await res.json();
+      const ext = data.extent;
+      if (ext?.xmin != null) {
+        return [ext.xmin, ext.ymin, ext.xmax, ext.ymax];
       }
     } catch {
       continue;
     }
   }
+  return null;
+}
+
+// =========================================================================
+// TIGERweb — fallback source
+// =========================================================================
+
+async function fetchTractsTiger(
+  stateFips: string,
+  countyFips: string
+): Promise<FeatureCollection> {
+  const services = [
+    `${TIGER}/Tracts_Blocks/MapServer`,
+    `${TIGER}/tigerWMS_Current/MapServer`,
+    `${TIGER}/tigerWMS_Census2020/MapServer`,
+  ];
+  const layers = [0, 2, 6, 8, 10, 14];
+  const fieldPatterns = [
+    `STATEFP='${stateFips}' AND COUNTYFP='${countyFips}'`,
+    `STATE='${stateFips}' AND COUNTY='${countyFips}'`,
+    `STATEFP20='${stateFips}' AND COUNTYFP20='${countyFips}'`,
+  ];
+
+  for (const svc of services) {
+    for (const layer of layers) {
+      for (const where of fieldPatterns) {
+        try {
+          const url =
+            `${svc}/${layer}/query?where=${encodeURIComponent(where)}` +
+            `&outFields=*&outSR=4326&f=json&resultRecordCount=5&returnGeometry=true`;
+
+          const res = await fetch(url);
+          if (!res.ok) continue;
+          const data = await res.json();
+          if (data.error) continue;
+
+          if (data.type === "FeatureCollection" && data.features?.length > 0) {
+            // Worked with f=json returning GeoJSON — rare but possible
+            // Now fetch all records
+            return await fetchAllTiger(svc, layer, where);
+          }
+          if (data.features?.length > 0 && data.features[0].geometry?.rings) {
+            return await fetchAllTiger(svc, layer, where);
+          }
+        } catch {
+          continue;
+        }
+      }
+    }
+  }
 
   return EMPTY_FC;
+}
+
+async function fetchAllTiger(
+  svc: string,
+  layer: number,
+  where: string
+): Promise<FeatureCollection> {
+  // Try GeoJSON first, then Esri JSON
+  for (const fmt of ["geojson", "json"]) {
+    try {
+      const url =
+        `${svc}/${layer}/query?where=${encodeURIComponent(where)}` +
+        `&outFields=*&outSR=4326&f=${fmt}&returnGeometry=true`;
+      const res = await fetch(url);
+      if (!res.ok) continue;
+      const data = await res.json();
+      if (data.error) continue;
+
+      if (data.type === "FeatureCollection" && data.features?.length > 0) {
+        return normalizeProperties(data);
+      }
+      if (data.features?.length > 0) {
+        return normalizeProperties(esriToGeoJson(data));
+      }
+    } catch {
+      continue;
+    }
+  }
+  return EMPTY_FC;
+}
+
+async function fetchZctaTiger(
+  stateFips: string,
+  countyFips: string
+): Promise<FeatureCollection> {
+  const envelope = await getCountyEnvelope(stateFips, countyFips);
+  if (!envelope) return EMPTY_FC;
+
+  const geometry = JSON.stringify({
+    xmin: envelope[0], ymin: envelope[1],
+    xmax: envelope[2], ymax: envelope[3],
+    spatialReference: { wkid: 4326 },
+  });
+
+  const services = [
+    `${TIGER}/PUMA_TAD_TAZ_UGA_ZCTA/MapServer`,
+    `${TIGER}/tigerWMS_Current/MapServer`,
+  ];
+  const layers = [0, 2, 4];
+
+  for (const svc of services) {
+    for (const layer of layers) {
+      for (const fmt of ["geojson", "json"]) {
+        try {
+          const url =
+            `${svc}/${layer}/query?geometry=${encodeURIComponent(geometry)}` +
+            `&geometryType=esriGeometryEnvelope&spatialRel=esriSpatialRelIntersects` +
+            `&outFields=*&outSR=4326&f=${fmt}&returnGeometry=true`;
+
+          const res = await fetch(url);
+          if (!res.ok) continue;
+          const data = await res.json();
+          if (data.error) continue;
+
+          if (data.type === "FeatureCollection" && data.features?.length > 0) {
+            return normalizeProperties(data);
+          }
+          if (data.features?.length > 0) {
+            return normalizeProperties(esriToGeoJson(data));
+          }
+        } catch {
+          continue;
+        }
+      }
+    }
+  }
+
+  return EMPTY_FC;
+}
+
+// =========================================================================
+// Normalization — ensure GEOID, ALAND exist in properties
+// =========================================================================
+
+function normalizeProperties(fc: FeatureCollection): FeatureCollection {
+  for (const f of fc.features) {
+    if (!f.properties) f.properties = {};
+    const p = f.properties;
+    // Ensure GEOID exists
+    if (!p.GEOID) {
+      p.GEOID = p.GEOID20 ?? p.GEO_ID ?? p.FIPS ?? p.TRACTCE ?? p.TRACTCE20 ?? null;
+    }
+    // For ZCTAs
+    if (!p.ZCTA5CE20) {
+      p.ZCTA5CE20 = p.ZCTA5 ?? p.ZCTA ?? p.GEOID20 ?? p.GEOID ?? null;
+    }
+    // Ensure ALAND exists
+    if (!p.ALAND) {
+      p.ALAND = p.ALAND20 ?? p.Shape__Area ?? p.SQMI ?? 1000000;
+    }
+  }
+  return fc;
 }
 
 // =========================================================================
@@ -238,51 +406,23 @@ function esriToGeoJson(esri: any): FeatureCollection {
   if (!esri.features || !Array.isArray(esri.features)) return EMPTY_FC;
 
   const features: Feature[] = [];
-
   for (const ef of esri.features) {
-    const geometry = convertEsriGeometry(ef.geometry);
+    const geometry = convertGeometry(ef.geometry);
     if (!geometry) continue;
-
     features.push({
       type: "Feature",
       properties: ef.attributes ?? {},
       geometry,
     });
   }
-
   return { type: "FeatureCollection", features };
 }
 
-function convertEsriGeometry(g: any): Geometry | null {
+function convertGeometry(g: any): Geometry | null {
   if (!g) return null;
-
-  // Polygon (rings)
-  if (g.rings) {
-    return {
-      type: "Polygon",
-      coordinates: g.rings,
-    };
-  }
-
-  // MultiPolygon (rings with holes — detect by winding)
-  if (g.curveRings) return null; // Not supported
-
-  // Point
-  if (g.x !== undefined && g.y !== undefined) {
-    return {
-      type: "Point",
-      coordinates: [g.x, g.y],
-    };
-  }
-
-  // Polyline
-  if (g.paths) {
-    return {
-      type: "MultiLineString",
-      coordinates: g.paths,
-    };
-  }
-
+  if (g.rings) return { type: "Polygon", coordinates: g.rings };
+  if (g.x !== undefined) return { type: "Point", coordinates: [g.x, g.y] };
+  if (g.paths) return { type: "MultiLineString", coordinates: g.paths };
   return null;
 }
 
@@ -291,14 +431,12 @@ function convertEsriGeometry(g: any): Geometry | null {
 // =========================================================================
 
 const ACS_VARIABLES = [
-  "B01003_001E",
-  "B01002_001E",
+  "B01003_001E", "B01002_001E",
   "B01001_020E", "B01001_021E", "B01001_022E",
   "B01001_023E", "B01001_024E", "B01001_025E",
   "B01001_044E", "B01001_045E", "B01001_046E",
   "B01001_047E", "B01001_048E", "B01001_049E",
-  "B19013_001E",
-  "B17001_001E", "B17001_002E",
+  "B19013_001E", "B17001_001E", "B17001_002E",
   "C18108_001E", "C18108_007E", "C18108_011E",
   "B16004_001E", "B16004_025E",
   "B27010_001E", "B27010_017E", "B27010_033E",
@@ -329,7 +467,6 @@ export async function fetchAcsDemographics(
     flag65Low: false,
   };
 
-  // Check cache
   if (db) {
     try {
       const cached = await db.censusAcsCache.findUnique({
@@ -338,9 +475,7 @@ export async function fetchAcsDemographics(
       if (cached && cached.expiresAt > new Date()) {
         return cached.data as DemographicProfile;
       }
-    } catch {
-      // DB unavailable — fetch live
-    }
+    } catch { /* skip */ }
   }
 
   const vars = ACS_VARIABLES.join(",");
@@ -370,59 +505,42 @@ export async function fetchAcsDemographics(
     });
 
     const totalPop = v["B01003_001E"];
-    const pop65Plus =
+    const pop65 =
       (v["B01001_020E"] ?? 0) + (v["B01001_021E"] ?? 0) + (v["B01001_022E"] ?? 0) +
       (v["B01001_023E"] ?? 0) + (v["B01001_024E"] ?? 0) + (v["B01001_025E"] ?? 0) +
       (v["B01001_044E"] ?? 0) + (v["B01001_045E"] ?? 0) + (v["B01001_046E"] ?? 0) +
       (v["B01001_047E"] ?? 0) + (v["B01001_048E"] ?? 0) + (v["B01001_049E"] ?? 0);
-    const pop75Plus =
+    const pop75 =
       (v["B01001_023E"] ?? 0) + (v["B01001_024E"] ?? 0) + (v["B01001_025E"] ?? 0) +
       (v["B01001_047E"] ?? 0) + (v["B01001_048E"] ?? 0) + (v["B01001_049E"] ?? 0);
 
-    const povertyUniverse = v["B17001_001E"];
-    const belowPoverty = v["B17001_002E"];
-    const disabilityUniverse = v["C18108_001E"];
-    const withDisability = (v["C18108_007E"] ?? 0) + (v["C18108_011E"] ?? 0);
-    const langUniverse = v["B16004_001E"];
-    const lingIsolated = v["B16004_025E"];
-    const insUniverse = v["B27010_001E"];
-    const noInsurance = v["B27010_033E"];
-    const medicare = v["B27010_017E"];
+    const povU = v["B17001_001E"], povB = v["B17001_002E"];
+    const disU = v["C18108_001E"], disW = (v["C18108_007E"] ?? 0) + (v["C18108_011E"] ?? 0);
+    const lngU = v["B16004_001E"], lngI = v["B16004_025E"];
+    const insU = v["B27010_001E"], noIns = v["B27010_033E"], med = v["B27010_017E"];
 
-    const pct65 = totalPop && totalPop > 0 ? (pop65Plus / totalPop) * 100 : null;
+    const pct65 = totalPop && totalPop > 0 ? (pop65 / totalPop) * 100 : null;
 
     const profile: DemographicProfile = {
       totalPopulation: totalPop,
       medianAge: v["B01002_001E"],
       pct65Plus: pct65 !== null ? Math.round(pct65 * 10) / 10 : null,
-      pct75Plus: totalPop && totalPop > 0 ? Math.round((pop75Plus / totalPop) * 1000) / 10 : null,
+      pct75Plus: totalPop && totalPop > 0 ? Math.round((pop75 / totalPop) * 1000) / 10 : null,
       medianHouseholdIncome: v["B19013_001E"],
-      povertyRate: povertyUniverse && povertyUniverse > 0 && belowPoverty !== null
-        ? Math.round((belowPoverty / povertyUniverse) * 1000) / 10 : null,
-      disabilityPrevalence: disabilityUniverse && disabilityUniverse > 0
-        ? Math.round((withDisability / disabilityUniverse) * 1000) / 10 : null,
-      languageIsolation: langUniverse && langUniverse > 0 && lingIsolated !== null
-        ? Math.round((lingIsolated / langUniverse) * 1000) / 10 : null,
-      medicareShare: insUniverse && insUniverse > 0 && medicare !== null
-        ? Math.round((medicare / insUniverse) * 1000) / 10 : null,
-      uninsuredRate: insUniverse && insUniverse > 0 && noInsurance !== null
-        ? Math.round((noInsurance / insUniverse) * 1000) / 10 : null,
+      povertyRate: povU && povU > 0 && povB !== null ? Math.round((povB / povU) * 1000) / 10 : null,
+      disabilityPrevalence: disU && disU > 0 ? Math.round((disW / disU) * 1000) / 10 : null,
+      languageIsolation: lngU && lngU > 0 && lngI !== null ? Math.round((lngI / lngU) * 1000) / 10 : null,
+      medicareShare: insU && insU > 0 && med !== null ? Math.round((med / insU) * 1000) / 10 : null,
+      uninsuredRate: insU && insU > 0 && noIns !== null ? Math.round((noIns / insU) * 1000) / 10 : null,
       flag65Low: pct65 !== null && pct65 < 15,
     };
 
-    // Cache if DB available
     if (db) {
       try {
         await db.censusAcsCache.upsert({
           where: { geoId_geoType: { geoId, geoType } },
-          create: {
-            geoId, geoType, data: profile as any,
-            expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
-          },
-          update: {
-            data: profile as any, fetchedAt: new Date(),
-            expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
-          },
+          create: { geoId, geoType, data: profile as any, expiresAt: new Date(Date.now() + 90 * 86400000) },
+          update: { data: profile as any, fetchedAt: new Date(), expiresAt: new Date(Date.now() + 90 * 86400000) },
         });
       } catch { /* skip */ }
     }
