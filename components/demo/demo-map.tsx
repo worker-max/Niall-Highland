@@ -15,63 +15,105 @@ const DemoMapCanvas = dynamic(
   }
 );
 
-type View = "tract" | "zip";
+export type LayerConfig = {
+  showTracts: boolean;
+  showZips: boolean;
+  showData: boolean;
+  quarter: string;
+};
 
 export function DemoMap() {
-  const [view, setView] = useState<View>("tract");
-  const [quarter, setQuarter] = useState<string>("2025-Q1");
+  const [layers, setLayers] = useState<LayerConfig>({
+    showTracts: true,
+    showZips: false,
+    showData: true,
+    quarter: "2025-Q1",
+  });
+
+  const toggle = (key: keyof LayerConfig) => {
+    if (key === "quarter") return;
+    setLayers((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
 
   return (
     <div className="card p-0 overflow-hidden">
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ink-200 bg-white px-4 py-3">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-ink-200 bg-white px-4 py-3">
+        {/* Boundary layers */}
+        <div className="flex items-center gap-4">
           <label className="text-[10px] font-semibold uppercase tracking-wider text-ink-400">
-            View
+            Boundaries
           </label>
-          <div className="inline-flex rounded-lg border border-ink-200 bg-ink-50 p-0.5">
-            {(["tract", "zip"] as View[]).map((v) => (
-              <button
-                key={v}
-                type="button"
-                onClick={() => setView(v)}
-                className={
-                  "rounded px-4 py-1.5 text-xs font-semibold transition " +
-                  (view === v
-                    ? "bg-white text-teal-900 shadow-sm"
-                    : "text-ink-500 hover:text-ink-700")
-                }
-              >
-                {v === "tract" ? "Census Tract" : "ZIP Code"}
-              </button>
-            ))}
-          </div>
-          <div className="hidden sm:block text-[10px] text-ink-400">
-            {view === "tract"
-              ? "Smaller boundaries, higher precision"
-              : "Larger areas, more familiar to clinicians"}
-          </div>
+          <label className="flex items-center gap-1.5 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={layers.showTracts}
+              onChange={() => toggle("showTracts")}
+              className="h-3.5 w-3.5 rounded border-ink-300 text-teal-600 focus:ring-teal-500"
+            />
+            <span className="text-xs font-medium text-ink-700">Census Tracts</span>
+          </label>
+          <label className="flex items-center gap-1.5 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={layers.showZips}
+              onChange={() => toggle("showZips")}
+              className="h-3.5 w-3.5 rounded border-ink-300 text-teal-600 focus:ring-teal-500"
+            />
+            <span className="text-xs font-medium text-ink-700">ZIP Codes</span>
+          </label>
         </div>
 
-        <div className="flex items-center gap-2">
-          <label className="text-[10px] font-semibold uppercase tracking-wider text-ink-400">
-            Period
+        {/* Data toggle */}
+        <div className="flex items-center gap-4">
+          <label className="flex items-center gap-1.5 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={layers.showData}
+              onChange={() => toggle("showData")}
+              className="h-3.5 w-3.5 rounded border-ink-300 text-teal-600 focus:ring-teal-500"
+            />
+            <span className="text-xs font-medium text-ink-700">Heat Map Data</span>
           </label>
-          <select
-            className="input !w-auto !py-1.5 !text-xs"
-            value={quarter}
-            onChange={(e) => setQuarter(e.target.value)}
-          >
-            <option value="all">All periods</option>
-            <option value="2025-Q1">2025 Q1</option>
-            <option value="2024-Q4">2024 Q4</option>
-            <option value="2024-Q3">2024 Q3</option>
-            <option value="2024-Q2">2024 Q2</option>
-          </select>
+
+          {/* Quarter selector */}
+          <div className="flex items-center gap-2">
+            <label className="text-[10px] font-semibold uppercase tracking-wider text-ink-400">
+              Period
+            </label>
+            <select
+              className="input !w-auto !py-1.5 !text-xs"
+              value={layers.quarter}
+              onChange={(e) =>
+                setLayers((prev) => ({ ...prev, quarter: e.target.value }))
+              }
+              disabled={!layers.showData}
+            >
+              <option value="all">All periods</option>
+              <option value="2025-Q1">2025 Q1</option>
+              <option value="2024-Q4">2024 Q4</option>
+              <option value="2024-Q3">2024 Q3</option>
+              <option value="2024-Q2">2024 Q2</option>
+            </select>
+          </div>
         </div>
       </div>
 
-      <DemoMapCanvas view={view} quarter={quarter} />
+      {/* Hint bar */}
+      <div className="border-b border-ink-100 bg-cream-50 px-4 py-1.5 text-[11px] text-ink-500">
+        {!layers.showTracts && !layers.showZips
+          ? "Enable at least one boundary layer to see geographic boundaries."
+          : layers.showTracts && layers.showZips
+          ? "Showing both tract (thin) and ZIP (thick dashed) boundaries."
+          : layers.showTracts
+          ? "Showing Census tract boundaries."
+          : "Showing ZIP code boundaries."}
+        {layers.showData
+          ? " Heat map data is on — colors show admission density."
+          : " Heat map data is off — boundaries only."}
+      </div>
+
+      <DemoMapCanvas layers={layers} />
     </div>
   );
 }
