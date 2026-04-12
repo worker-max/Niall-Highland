@@ -18,6 +18,8 @@ export function SiteFooter() {
             <h4 className="mb-3 text-sm font-semibold text-teal-900">Product</h4>
             <ul className="space-y-2 text-sm text-ink-600">
               <li><Link href="/#pricing" className="hover:text-teal-800">Pricing</Link></li>
+              <li><Link href="/docs" className="hover:text-teal-800">Docs</Link></li>
+              <li><Link href="/changelog" className="hover:text-teal-800">Changelog</Link></li>
               <li><Link href="/signup" className="hover:text-teal-800">Start free quarter</Link></li>
               <li><Link href="/contact" className="hover:text-teal-800">Contact</Link></li>
             </ul>

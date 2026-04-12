@@ -14,6 +14,12 @@ export function SiteHeader() {
           <Link href="/#pricing" className="text-sm font-medium text-ink-700 hover:text-teal-900">
             Pricing
           </Link>
+          <Link href="/docs" className="text-sm font-medium text-ink-700 hover:text-teal-900">
+            Docs
+          </Link>
+          <Link href="/changelog" className="text-sm font-medium text-ink-700 hover:text-teal-900">
+            Changelog
+          </Link>
           <Link href="/contact" className="text-sm font-medium text-ink-700 hover:text-teal-900">
             Contact
           </Link>

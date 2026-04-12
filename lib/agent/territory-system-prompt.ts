@@ -1,9 +1,17 @@
 /**
- * Territory Builder Agent — system prompt.
+ * Territory Builder Agent — system prompt (local fallback).
  *
- * This is a critical product asset.  It encodes the territory assignment
- * philosophy that makes this tool useful for branch directors.  Edit with
- * care and version any meaningful changes.
+ * CANONICAL SOURCE: Notion Prompt Library DB, slug "territory-builder".
+ *
+ * At runtime the agent fetches its prompt from Notion via lib/notion-prompts.ts.
+ * This file exists as a local fallback so the scaffold works without Notion,
+ * and so engineers reviewing code can see the baseline philosophy without
+ * needing a Notion account.
+ *
+ * If you meaningfully update the assignment rules, update BOTH the Notion
+ * page (for live edits) and this file (for the default + code review
+ * trail).  The diagram's "Notion superpower" is: edit in Notion → zero
+ * redeploy.  This file is the last-resort fallback, not the source of truth.
  */
 
 export const TERRITORY_SYSTEM_PROMPT = `

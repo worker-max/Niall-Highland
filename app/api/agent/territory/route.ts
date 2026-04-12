@@ -2,10 +2,16 @@ import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { requireBranch, tierAllows } from "@/lib/auth";
 import { TERRITORY_SYSTEM_PROMPT } from "@/lib/agent/territory-system-prompt";
+import { getPrompt } from "@/lib/notion-prompts";
+import { getAgentConfig } from "@/lib/notion";
 import { prisma } from "@/lib/db";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
+
+// Notion slug that identifies this agent's system prompt + config.
+// Editing the Notion row takes effect on the next run — zero redeploy.
+const MACHINE_SLUG = "territory-builder";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 
@@ -39,6 +45,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Missing messages" }, { status: 400 });
   }
 
+  // === The Notion superpower ===
+  // System prompt + agent config come from Notion at runtime, so ops can
+  // edit them without touching code or redeploying.  Local fallbacks keep
+  // the agent working if Notion is unreachable.
+  const [promptResult, agentConfig] = await Promise.all([
+    getPrompt(MACHINE_SLUG, TERRITORY_SYSTEM_PROMPT),
+    getAgentConfig(MACHINE_SLUG),
+  ]);
+
   // Load branch context for the agent
   const [counties, clinicians] = await Promise.all([
     prisma.county.findMany({ where: { branchId: branch.id } }),
@@ -65,12 +80,13 @@ export async function POST(req: Request) {
 
   try {
     const completion = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 1200,
+      model: agentConfig.model,
+      max_tokens: agentConfig.maxTokens,
+      temperature: agentConfig.temperature,
       system: [
         {
           type: "text",
-          text: TERRITORY_SYSTEM_PROMPT,
+          text: promptResult.text,
           cache_control: { type: "ephemeral" },
         },
         {
@@ -87,7 +103,14 @@ export async function POST(req: Request) {
     const textBlock = completion.content.find((c) => c.type === "text");
     const reply = textBlock && textBlock.type === "text" ? textBlock.text : "(no response)";
 
-    return NextResponse.json({ reply });
+    return NextResponse.json({
+      reply,
+      _meta: {
+        promptSource: promptResult.source,
+        promptVersion: promptResult.version,
+        model: agentConfig.model,
+      },
+    });
   } catch (e) {
     return NextResponse.json(
       { reply: "The agent encountered an error. Please try again." },
