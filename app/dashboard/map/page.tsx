@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function HeatMapPage() {
   const branch = await requireBranch();
 
-  const [counties, uploads, quarterRows] = await Promise.all([
+  const [counties, uploads, quarterRows, clinicians] = await Promise.all([
     prisma.county.findMany({ where: { branchId: branch.id } }),
     prisma.uploadSession.findMany({
       where: { branchId: branch.id, uploadType: "ADMISSIONS" },
@@ -21,6 +21,11 @@ export default async function HeatMapPage() {
       select: { admissionYear: true, admissionQuarter: true },
       distinct: ["admissionYear", "admissionQuarter"],
       orderBy: [{ admissionYear: "desc" }, { admissionQuarter: "desc" }],
+    }),
+    prisma.clinician.findMany({
+      where: { branchId: branch.id, active: true },
+      select: { id: true, discipline: true, number: true, homeZip: true },
+      orderBy: [{ discipline: "asc" }, { number: "asc" }],
     }),
   ]);
 
@@ -59,7 +64,7 @@ export default async function HeatMapPage() {
         <>
           <CsvUploader uploadType="ADMISSIONS" />
           <div className="mt-6">
-            <HeatMapClient counties={counties} quarters={quarters} />
+            <HeatMapClient counties={counties} quarters={quarters} clinicians={clinicians} />
           </div>
         </>
       )}

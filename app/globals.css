@@ -63,3 +63,11 @@ body {
 .map-tooltip::before {
   border-top-color: rgba(255, 255, 255, 0.95) !important;
 }
+
+/* Crosshair cursor when in isochrone click-to-place mode */
+.isochrone-click-mode .leaflet-container {
+  cursor: crosshair !important;
+}
+.isochrone-click-mode .leaflet-interactive {
+  cursor: crosshair !important;
+}

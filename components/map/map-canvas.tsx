@@ -6,11 +6,16 @@ import {
   TileLayer,
   GeoJSON,
   useMap,
+  useMapEvents,
 } from "react-leaflet";
 import L from "leaflet";
 import type { County } from "@prisma/client";
 import type { FeatureCollection, Feature } from "geojson";
 import type { DemographicProfile } from "@/lib/census";
+import { IsochroneLayer } from "./isochrone-layer";
+import type { IsochroneSet } from "./isochrone-layer";
+import { TrendOverlay } from "./trend-overlay";
+import { parseQuarterLabel } from "@/lib/utils";
 import "leaflet/dist/leaflet.css";
 
 // =========================================================================
@@ -112,11 +117,23 @@ type Props = {
   view: View;
   quarter: string;
   metric?: Metric;
+  /** Active isochrone sets to render on the map */
+  isochrones?: IsochroneSet[];
+  /** Whether click-to-place isochrone mode is active */
+  isochroneClickMode?: boolean;
+  /** Callback when the user clicks the map in isochrone click mode */
+  onIsochroneClick?: (lat: number, lng: number) => void;
+  /** Show quarter-over-quarter trend indicators at polygon centroids */
+  showTrends?: boolean;
+  /** Available quarter labels (e.g. ["2025-Q1", "2024-Q4"]) for computing previous quarter */
+  quarters?: string[];
 };
 
 type SelectedRegion = {
   geoId: string;
   count: number;
+  density: number;
+  sqMiles: number;
   demographics: DemographicProfile | null;
   loading: boolean;
 };
@@ -125,9 +142,20 @@ type SelectedRegion = {
 // Component
 // =========================================================================
 
-export function MapCanvas({ counties, view, quarter, metric = "admissions" }: Props) {
+export function MapCanvas({
+  counties,
+  view,
+  quarter,
+  metric = "admissions",
+  isochrones = [],
+  isochroneClickMode = false,
+  onIsochroneClick,
+  showTrends = false,
+  quarters = [],
+}: Props) {
   const [geo, setGeo] = useState<FeatureCollection | null>(null);
   const [counts, setCounts] = useState<Counts>({});
+  const [prevCounts, setPrevCounts] = useState<Counts>({});
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<SelectedRegion | null>(null);
   const [densityDiscipline, setDensityDiscipline] = useState<DisciplineKey>("RN");
@@ -172,6 +200,30 @@ export function MapCanvas({ counties, view, quarter, metric = "admissions" }: Pr
       .then((data: Counts) => setCounts(data))
       .catch(() => setCounts({}));
   }, [view, quarter]);
+
+  // ------ Compute previous quarter label ------
+  const prevQuarter = useMemo(() => {
+    if (quarter === "all") return null;
+    const parsed = parseQuarterLabel(quarter);
+    if (!parsed) return null;
+    const { year, quarter: q } = parsed;
+    const prevLabel = q === 1 ? `${year - 1}-Q4` : `${year}-Q${q - 1}`;
+    // Only use it if the previous quarter exists in the available quarters list
+    if (quarters.includes(prevLabel)) return prevLabel;
+    return null;
+  }, [quarter, quarters]);
+
+  // ------ Fetch previous-quarter counts (for trend overlay) ------
+  useEffect(() => {
+    if (!showTrends || !prevQuarter) {
+      setPrevCounts({});
+      return;
+    }
+    fetch(`/api/admissions/aggregate?view=${view}&quarter=${prevQuarter}`)
+      .then((r) => (r.ok ? r.json() : {}))
+      .then((data: Counts) => setPrevCounts(data))
+      .catch(() => setPrevCounts({}));
+  }, [view, prevQuarter, showTrends]);
 
   // ------ Build area lookup: geoId → sq miles (from ALAND in boundary data) ------
   const areaMap = useMemo(() => {
@@ -325,9 +377,11 @@ export function MapCanvas({ counties, view, quarter, metric = "admissions" }: Pr
   );
 
   const bps = breakpoints(maxCount);
+  const dbps = densityBreakpoints(maxDensity);
+  const activeThreshold = DENSITY_THRESHOLDS[densityDiscipline];
 
   return (
-    <div className="relative h-[640px]">
+    <div className={`relative h-[640px]${isochroneClickMode ? " isochrone-click-mode" : ""}`}>
       {loading && (
         <div className="absolute inset-0 z-[1000] flex items-center justify-center bg-ink-950/60 rounded-b-xl">
           <div className="rounded-lg bg-white px-6 py-4 shadow-lg text-sm text-ink-700">
@@ -344,32 +398,44 @@ export function MapCanvas({ counties, view, quarter, metric = "admissions" }: Pr
         scrollWheelZoom
         zoomControl={false}
       >
-        {/*
-          Base layer: CartoDB Voyager (muted colors, clear roads/labels/county lines)
-          overlaid with a dark matter labels-only layer on top of the GeoJSON
-          so road names, place names, and county/state lines stay readable
-          even over the choropleth fill.
-        */}
         <TileLayer
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>'
           maxZoom={20}
         />
-        {/* Zoom control in top-right to avoid overlapping sidebar */}
         <ZoomControl />
 
         {geo && (
           <GeoJSON
             ref={(r) => { geoJsonRef.current = r ?? null; }}
-            key={`${view}-${quarter}-${maxCount}-${geo.features.length}`}
+            key={`${view}-${quarter}-${metric}-${densityDiscipline}-${maxCount}-${maxDensity}-${geo.features.length}`}
             data={geo}
             style={style as any}
             onEachFeature={onEachFeature}
           />
         )}
 
-        {/* Labels layer ON TOP of the choropleth — keeps road names,
-            county lines, and place names readable over filled polygons */}
+        {/* Isochrone polygons — rendered above choropleth but below labels */}
+        {isochrones.length > 0 && (
+          <IsochroneLayer isochrones={isochrones} showOrigins />
+        )}
+
+        {/* Click-to-place isochrone handler */}
+        {isochroneClickMode && onIsochroneClick && (
+          <MapClickHandler onClick={onIsochroneClick} />
+        )}
+
+        {/* Quarter-over-quarter trend indicators */}
+        {showTrends && geo && prevQuarter && Object.keys(prevCounts).length > 0 && (
+          <TrendOverlay
+            geo={geo}
+            currentCounts={counts}
+            previousCounts={prevCounts}
+            geoType={view}
+            threshold={0.1}
+          />
+        )}
+
         <TileLayer
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png"
           maxZoom={20}
@@ -379,29 +445,109 @@ export function MapCanvas({ counties, view, quarter, metric = "admissions" }: Pr
         <FitBounds geo={geo} />
       </MapContainer>
 
-      {/* Color legend */}
-      <div className="absolute bottom-4 left-4 z-[1000] rounded-lg bg-white/90 px-3 py-2 shadow-card backdrop-blur">
-        <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-ink-500">
-          Admissions
-        </div>
-        <div className="flex gap-0.5">
-          {SCALE_COLORS.map((color, i) => (
-            <div key={i} className="text-center">
-              <div
-                className="h-3 w-8 border border-ink-200"
-                style={{ backgroundColor: color }}
-              />
-              <div className="mt-0.5 text-[9px] text-ink-500">{bps[i]}</div>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* Color legend — switches between count scale and density scale */}
+      {metric === "density" ? (
+        <div className="absolute bottom-4 left-4 z-[1000] rounded-lg bg-white/90 px-3 py-2.5 shadow-card backdrop-blur max-w-xs">
+          {/* Discipline selector for threshold */}
+          <div className="mb-1.5 flex items-center gap-2">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-ink-500">
+              Density
+            </span>
+            <select
+              className="rounded border border-ink-200 bg-white px-1.5 py-0.5 text-[10px] font-medium text-ink-700"
+              value={densityDiscipline}
+              onChange={(e) => setDensityDiscipline(e.target.value as DisciplineKey)}
+            >
+              {(Object.keys(DENSITY_THRESHOLDS) as DisciplineKey[]).map((d) => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
+            <span className="text-[9px] text-ink-400">pts/sq mi</span>
+          </div>
 
-      {/* Demographic sidebar */}
+          {/* Color bar */}
+          <div className="flex gap-0.5">
+            {DENSITY_COLORS.map((color, i) => (
+              <div key={i} className="text-center">
+                <div
+                  className="h-3 w-7 border border-ink-200"
+                  style={{ backgroundColor: color }}
+                />
+                <div className="mt-0.5 text-[8px] text-ink-500">
+                  {dbps[i] < 10 ? dbps[i].toFixed(1) : Math.round(dbps[i])}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Productivity threshold indicator */}
+          <div className="mt-1.5 flex items-center gap-1.5 rounded bg-green-50 px-2 py-1 border border-green-200">
+            <div className="h-2.5 w-2.5 rounded-full bg-green-500 flex-shrink-0" />
+            <span className="text-[9px] font-medium text-green-800">
+              Productive: {activeThreshold.label}
+            </span>
+          </div>
+          <div className="mt-1 text-[8px] text-ink-400">
+            Uses land area only (AREALAND) — water excluded
+          </div>
+        </div>
+      ) : (
+        <div className="absolute bottom-4 left-4 z-[1000] rounded-lg bg-white/90 px-3 py-2 shadow-card backdrop-blur">
+          <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-ink-500">
+            {metric === "adc" ? "Active Daily Census" : "Admissions"}
+          </div>
+          <div className="flex gap-0.5">
+            {SCALE_COLORS.map((color, i) => (
+              <div key={i} className="text-center">
+                <div
+                  className="h-3 w-8 border border-ink-200"
+                  style={{ backgroundColor: color }}
+                />
+                <div className="mt-0.5 text-[9px] text-ink-500">{bps[i]}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Trend legend */}
+      {showTrends && prevQuarter && (
+        <div className="absolute bottom-20 left-4 z-[1000] rounded-lg bg-white/90 px-3 py-2 shadow-card backdrop-blur">
+          <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-ink-500">
+            QoQ Trend vs {prevQuarter.replace("-", " ")}
+          </div>
+          <div className="space-y-1.5">
+            {([
+              { glyph: "\u25B2", color: "#22c55e", label: "Growing (>+10%)" },
+              { glyph: "\u25BC", color: "#ef4444", label: "Declining (>-10%)" },
+              { glyph: "\u2013", color: "#8592a9", label: "Flat (\u00B110%)" },
+            ] as const).map((item) => (
+              <div key={item.label} className="flex items-center gap-2">
+                <div
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    width: 16, height: 16, borderRadius: 8,
+                    background: "rgba(26, 29, 38, 0.85)",
+                    border: `1.5px solid ${item.color}`,
+                    color: "#fff", fontSize: 8, fontWeight: 700, lineHeight: 1,
+                  }}
+                >
+                  {item.glyph}
+                </div>
+                <span className="text-[10px] text-ink-600">{item.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Sidebar */}
       {selected && (
         <DemographicSidebar
           selected={selected}
           view={view}
+          metric={metric}
+          densityDiscipline={densityDiscipline}
           onClose={() => setSelected(null)}
         />
       )}
@@ -420,6 +566,15 @@ function ZoomControl() {
     ctrl.addTo(map);
     return () => { ctrl.remove(); };
   }, [map]);
+  return null;
+}
+
+function MapClickHandler({ onClick }: { onClick: (lat: number, lng: number) => void }) {
+  useMapEvents({
+    click(e) {
+      onClick(e.latlng.lat, e.latlng.lng);
+    },
+  });
   return null;
 }
 
@@ -443,13 +598,19 @@ function FitBounds({ geo }: { geo: FeatureCollection | null }) {
 function DemographicSidebar({
   selected,
   view,
+  metric,
+  densityDiscipline,
   onClose,
 }: {
   selected: SelectedRegion;
   view: View;
+  metric: Metric;
+  densityDiscipline: DisciplineKey;
   onClose: () => void;
 }) {
   const d = selected.demographics;
+  const threshold = DENSITY_THRESHOLDS[densityDiscipline];
+  const isProductive = selected.density >= threshold.threshold;
 
   return (
     <aside className="absolute right-3 top-3 z-[1000] w-72 max-h-[calc(100%-1.5rem)] overflow-auto rounded-xl border border-ink-200 bg-white p-4 shadow-card">
@@ -474,10 +635,75 @@ function DemographicSidebar({
         </button>
       </div>
 
-      <div className="mb-4">
-        <div className="text-3xl font-bold text-teal-900">{selected.count}</div>
-        <div className="text-xs text-ink-500">admissions this period</div>
-      </div>
+      {/* Primary metric display — density mode */}
+      {metric === "density" ? (
+        <div className="mb-4">
+          <div className="text-3xl font-bold text-teal-900">
+            {selected.density > 0 ? selected.density.toFixed(1) : "0"}
+          </div>
+          <div className="text-xs text-ink-500">patients per sq mile</div>
+
+          {/* Density detail rows */}
+          <div className="mt-2 space-y-1 rounded-lg bg-ink-50 px-3 py-2">
+            <div className="flex justify-between text-xs">
+              <span className="text-ink-500">Patients</span>
+              <span className="font-medium text-ink-800">{selected.count}</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-ink-500">Land area</span>
+              <span className="font-medium text-ink-800">
+                {selected.sqMiles > 0 ? `${selected.sqMiles.toFixed(2)} sq mi` : "\u2014"}
+              </span>
+            </div>
+          </div>
+
+          {/* Productivity assessment */}
+          {selected.density > 0 && (
+            <div className={`mt-2 flex items-center gap-1.5 rounded px-2 py-1.5 ${
+              isProductive
+                ? "bg-green-50 border border-green-200"
+                : "bg-amber-50 border border-amber-200"
+            }`}>
+              <div className={`h-2.5 w-2.5 rounded-full flex-shrink-0 ${
+                isProductive ? "bg-green-500" : "bg-amber-500"
+              }`} />
+              <span className={`text-[10px] font-medium ${
+                isProductive ? "text-green-800" : "text-amber-800"
+              }`}>
+                {isProductive
+                  ? `Productive for ${densityDiscipline} (threshold: ${threshold.threshold})`
+                  : `Below ${densityDiscipline} threshold (${threshold.threshold} pts/sq mi)`}
+              </span>
+            </div>
+          )}
+
+          {/* "Hidden gem" callout for small, dense tracts */}
+          {selected.count <= 5 && selected.density >= 10 && (
+            <div className="mt-2 rounded bg-blue-50 border border-blue-200 px-2 py-1.5">
+              <div className="text-[10px] font-semibold text-blue-800">Hidden productivity</div>
+              <div className="text-[9px] text-blue-700 mt-0.5">
+                Only {selected.count} patient{selected.count !== 1 ? "s" : ""} but{" "}
+                {selected.density.toFixed(1)} pts/sq mi — a clinician can see{" "}
+                {selected.count === 1 ? "this patient" : `all ${selected.count}`} in{" "}
+                {selected.sqMiles < 0.5 ? "minutes" : "under an hour"} without driving far.
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="mb-4">
+          <div className="text-3xl font-bold text-teal-900">{selected.count}</div>
+          <div className="text-xs text-ink-500">
+            {metric === "adc" ? "active patients" : "admissions this period"}
+          </div>
+          {/* Always show density context even in non-density mode */}
+          {selected.sqMiles > 0 && selected.density > 0 && (
+            <div className="mt-1 text-[10px] text-ink-400">
+              {selected.density.toFixed(1)} pts/sq mi ({selected.sqMiles.toFixed(2)} sq mi land)
+            </div>
+          )}
+        </div>
+      )}
 
       {selected.loading ? (
         <div className="py-4 text-center text-sm text-ink-400">Loading demographics…</div>

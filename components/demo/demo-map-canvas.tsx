@@ -106,7 +106,8 @@ const ADC_BASE_FACTOR = 0.83;
 
 function generateTractAdmissions(
   features: Feature[],
-  targetTotal: number
+  targetTotal: number,
+  quarterSeed: string = ""
 ): Record<string, number> {
   if (features.length === 0) return {};
 
@@ -118,7 +119,8 @@ function generateTractAdmissions(
     if (!id) continue;
     const aland = Number(f.properties?.ALAND ?? f.properties?.AREALAND ?? 1_000_000);
     const urbanWeight = 1 / Math.max(aland / 1_000_000, 0.1);
-    const jitter = 0.3 + seededRandom(seedHash(id)) * 1.4;
+    // Quarter seed perturbs the per-tract jitter so distributions differ across quarters
+    const jitter = 0.3 + seededRandom(seedHash(id + quarterSeed)) * 1.4;
     const weight = urbanWeight * jitter;
     scored.push({ id, weight });
     totalWeight += weight;
@@ -128,7 +130,7 @@ function generateTractAdmissions(
   let assigned = 0;
   for (const s of scored) {
     const base = (s.weight / totalWeight) * targetTotal;
-    const noise = (seededRandom(seedHash(s.id + "n")) - 0.3) * 3;
+    const noise = (seededRandom(seedHash(s.id + "n" + quarterSeed)) - 0.3) * 3;
     const count = Math.max(0, Math.round(base + noise));
     counts[s.id] = count;
     assigned += count;
@@ -335,7 +337,7 @@ export function DemoMapCanvas({ layers }: Props) {
   const tractAdmissions = useMemo(() => {
     if (!tractGeo) return {};
     const total = QUARTER_ADMISSIONS[layers.quarter] ?? QUARTER_ADMISSIONS["2025-Q1"];
-    return generateTractAdmissions(tractGeo.features, total);
+    return generateTractAdmissions(tractGeo.features, total, layers.quarter);
   }, [tractGeo, layers.quarter]);
 
   const tractAdc = useMemo(
@@ -354,6 +356,31 @@ export function DemoMapCanvas({ layers }: Props) {
     [tractAdc, tractGeo, zipGeo]
   );
 
+  // ---- Generate PREVIOUS quarter data (for QoQ trend indicators) ----
+  const prevQuarterKey = PREVIOUS_QUARTER[layers.quarter] ?? "2024-Q4";
+
+  const prevTractAdmissions = useMemo(() => {
+    if (!tractGeo) return {};
+    const total = PREV_QUARTER_ADMISSIONS[prevQuarterKey] ?? PREV_QUARTER_ADMISSIONS["2024-Q4"];
+    // Pass the previous quarter key as seed so distribution differs from current quarter
+    return generateTractAdmissions(tractGeo.features, total, prevQuarterKey);
+  }, [tractGeo, prevQuarterKey]);
+
+  const prevTractAdc = useMemo(
+    () => tractGeo ? generateTractAdc(prevTractAdmissions, tractGeo.features) : {},
+    [prevTractAdmissions, tractGeo]
+  );
+
+  const prevZipAdmissions = useMemo(
+    () => (tractGeo && zipGeo) ? aggregateToZip(prevTractAdmissions, tractGeo.features, zipGeo.features) : {},
+    [prevTractAdmissions, tractGeo, zipGeo]
+  );
+
+  const prevZipAdc = useMemo(
+    () => (tractGeo && zipGeo) ? aggregateToZip(prevTractAdc, tractGeo.features, zipGeo.features) : {},
+    [prevTractAdc, tractGeo, zipGeo]
+  );
+
   // ---- Pick which dataset to display ----
   const dataLayer: "tract" | "zip" = layers.showTracts ? "tract" : "zip";
   const activeCounts = useMemo(() => {
@@ -367,6 +394,16 @@ export function DemoMapCanvas({ layers }: Props) {
     for (const v of Object.values(activeCounts)) if (v > m) m = v;
     return m;
   }, [activeCounts]);
+
+  // ---- Previous-quarter counts for trend overlay ----
+  const previousCounts = useMemo(() => {
+    if (!layers.showData) return {};
+    if (dataLayer === "tract") return layers.metric === "admissions" ? prevTractAdmissions : prevTractAdc;
+    return layers.metric === "admissions" ? prevZipAdmissions : prevZipAdc;
+  }, [layers.showData, layers.metric, dataLayer, prevTractAdmissions, prevTractAdc, prevZipAdmissions, prevZipAdc]);
+
+  // The geo collection to use for trend overlay centroids
+  const trendGeo = dataLayer === "tract" ? tractGeo : zipGeo;
 
   // ---- Styles ----
   const tractStyle = useCallback((f: Feature | undefined) => {
@@ -476,6 +513,17 @@ export function DemoMapCanvas({ layers }: Props) {
         {/* Traffic flow overlay */}
         {layers.showTraffic && <TrafficOverlay period={layers.trafficPeriod} />}
 
+        {/* Quarter-over-quarter trend indicators */}
+        {layers.showTrends && layers.showData && trendGeo && (
+          <TrendOverlay
+            geo={trendGeo}
+            currentCounts={activeCounts}
+            previousCounts={previousCounts}
+            geoType={dataLayer}
+            threshold={0.1}
+          />
+        )}
+
         <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png" maxZoom={20} pane="overlayPane" />
         <FitBounds tractGeo={tractGeo} zipGeo={zipGeo} />
       </MapContainer>
@@ -491,6 +539,37 @@ export function DemoMapCanvas({ layers }: Props) {
               <div key={i} className="text-center">
                 <div className="h-3 w-8 border border-ink-200" style={{ backgroundColor: color }} />
                 <div className="mt-0.5 text-[9px] text-ink-500">{bps[i]}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Trend legend */}
+      {layers.showTrends && layers.showData && (
+        <div className="absolute bottom-20 left-4 z-[1000] rounded-lg bg-white/90 px-3 py-2 shadow-card backdrop-blur">
+          <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-ink-500">
+            QoQ Trend ({"\u00B1"}10% threshold)
+          </div>
+          <div className="space-y-1.5">
+            {([
+              { glyph: "\u25B2", color: "#22c55e", label: "Growing (>+10%)" },
+              { glyph: "\u25BC", color: "#ef4444", label: "Declining (>-10%)" },
+              { glyph: "\u2013", color: "#8592a9", label: "Flat (\u00B110%)" },
+            ] as const).map((item) => (
+              <div key={item.label} className="flex items-center gap-2">
+                <div
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    width: 16, height: 16, borderRadius: 8,
+                    background: "rgba(26, 29, 38, 0.85)",
+                    border: `1.5px solid ${item.color}`,
+                    color: "#fff", fontSize: 8, fontWeight: 700, lineHeight: 1,
+                  }}
+                >
+                  {item.glyph}
+                </div>
+                <span className="text-[10px] text-ink-600">{item.label}</span>
               </div>
             ))}
           </div>

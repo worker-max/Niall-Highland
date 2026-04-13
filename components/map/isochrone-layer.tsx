@@ -47,7 +47,7 @@ export const RING_STYLES: IsochroneRingStyle[] = [
 
 // Per-clinician color sets for comparing multiple isochrones.
 // Each clinician gets a distinct hue so overlapping rings are distinguishable.
-const CLINICIAN_PALETTES: { fill: string[]; stroke: string[] }[] = [
+export const CLINICIAN_PALETTES: { fill: string[]; stroke: string[] }[] = [
   {
     // Blue family (default / first clinician)
     fill: [
