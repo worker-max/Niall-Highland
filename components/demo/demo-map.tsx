@@ -23,6 +23,7 @@ export type LayerConfig = {
   showZips: boolean;
   showData: boolean;
   showTraffic: boolean;
+  showTrends: boolean;
   trafficPeriod: TrafficPeriod;
   metric: DataMetric;
   quarter: string;
@@ -34,12 +35,13 @@ export function DemoMap() {
     showZips: false,
     showData: true,
     showTraffic: false,
+    showTrends: false,
     trafficPeriod: "am",
     metric: "admissions",
     quarter: "2025-Q1",
   });
 
-  const toggle = (key: "showTracts" | "showZips" | "showData" | "showTraffic") => {
+  const toggle = (key: "showTracts" | "showZips" | "showData" | "showTraffic" | "showTrends") => {
     setLayers((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
@@ -114,6 +116,17 @@ export function DemoMap() {
               className="h-3.5 w-3.5 rounded border-ink-300 text-teal-600 focus:ring-teal-500"
             />
             <span className="text-xs font-medium text-ink-700">Heat Map</span>
+          </label>
+
+          <label className="flex items-center gap-1.5 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={layers.showTrends}
+              onChange={() => toggle("showTrends")}
+              disabled={!layers.showData}
+              className="h-3.5 w-3.5 rounded border-ink-300 text-teal-600 focus:ring-teal-500 disabled:opacity-40"
+            />
+            <span className={`text-xs font-medium ${layers.showData ? "text-ink-700" : "text-ink-400"}`}>QoQ Trends</span>
           </label>
 
           {/* Metric toggle */}
