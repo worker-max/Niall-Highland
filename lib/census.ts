@@ -333,11 +333,18 @@ function normalize(fc: FeatureCollection): FeatureCollection {
     if (p.AREALAND != null && p.ALAND == null) p.ALAND = Number(p.AREALAND);
     if (p.AREALAND20 != null && p.ALAND == null) p.ALAND = Number(p.AREALAND20);
     if (p.SQMI != null && p.ALAND == null) p.ALAND = Number(p.SQMI) * 2589988; // sqmi → sqm
-    // Ensure GEOID for tracts
+    // Ensure GEOID for tracts — construct from parts if not present
     if (!p.GEOID) p.GEOID = p.GEOID20 ?? p.GEO_ID ?? null;
+    if (!p.GEOID && p.STATEFP && p.COUNTYFP && p.TRACTCE) {
+      p.GEOID = `${p.STATEFP}${p.COUNTYFP}${p.TRACTCE}`;
+    }
+    if (!p.GEOID && p.STATE && p.COUNTY && p.TRACT) {
+      p.GEOID = `${p.STATE}${p.COUNTY}${p.TRACT}`;
+    }
+    if (!p.GEOID && p.FIPS) p.GEOID = String(p.FIPS);
     // Normalize ZIP/ZCTA identifier → ZIP_CODE
     if (!p.ZIP_CODE) {
-      p.ZIP_CODE = p.ZIP_CODE ?? p.ZIP ?? p.ZCTA5CE20 ?? p.ZCTA5CE ?? p.ZCTA5
+      p.ZIP_CODE = p.ZIP ?? p.ZCTA5CE20 ?? p.ZCTA5CE ?? p.ZCTA5
         ?? p.BASENAME ?? p.GEOID20 ?? p.GEOID ?? null;
     }
     // Strip leading/trailing whitespace from ZIP

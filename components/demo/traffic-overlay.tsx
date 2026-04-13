@@ -125,15 +125,21 @@ function createArrow(
   to: [number, number],
   color: string
 ): L.Marker | null {
-  const angle = Math.atan2(to[0] - from[0], to[1] - from[1]) * (180 / Math.PI);
+  // from/to are [lat, lng]. For angle: dx=lng diff (east), dy=lat diff (north)
+  const dx = to[1] - from[1]; // longitude = east-west
+  const dy = to[0] - from[0]; // latitude = north-south
+  // atan2(dy, dx) gives angle from east, counter-clockwise
+  // CSS rotation is clockwise from north (top)
+  const angleDeg = 90 - Math.atan2(dy, dx) * (180 / Math.PI);
+
   const midLat = (from[0] + to[0]) / 2;
   const midLng = (from[1] + to[1]) / 2;
 
   const icon = L.divIcon({
-    html: `<div style="transform:rotate(${-angle + 90}deg);color:${color};font-size:16px;font-weight:bold;line-height:1;text-shadow:0 0 3px rgba(0,0,0,0.5);">&#9654;</div>`,
+    html: `<div style="transform:rotate(${angleDeg}deg);color:${color};font-size:18px;font-weight:bold;line-height:1;text-shadow:0 1px 3px rgba(0,0,0,0.5);">&#9650;</div>`,
     className: "",
-    iconSize: [16, 16],
-    iconAnchor: [8, 8],
+    iconSize: [18, 18],
+    iconAnchor: [9, 9],
   });
 
   return L.marker([midLat, midLng], { icon, interactive: false });

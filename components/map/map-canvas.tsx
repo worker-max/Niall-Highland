@@ -795,7 +795,12 @@ function geoIdFor(f: Feature | undefined, view: View): string | null {
   if (!f?.properties) return null;
   const p = f.properties;
   if (view === "tract") {
-    return p.GEOID ?? p.geoid ?? null;
+    if (p.GEOID) return p.GEOID;
+    if (p.geoid) return p.geoid;
+    if (p.STATEFP && p.COUNTYFP && p.TRACTCE) return `${p.STATEFP}${p.COUNTYFP}${p.TRACTCE}`;
+    if (p.STATE && p.COUNTY && p.TRACT) return `${p.STATE}${p.COUNTY}${p.TRACT}`;
+    if (p.FIPS) return String(p.FIPS);
+    return null;
   }
   return p.ZIP_CODE ?? p.ZIP ?? p.ZCTA5CE20 ?? p.ZCTA5 ?? p.BASENAME ?? p.GEOID20 ?? p.GEOID ?? null;
 }

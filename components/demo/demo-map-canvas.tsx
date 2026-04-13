@@ -119,7 +119,9 @@ function generateTractAdmissions(
   for (const f of features) {
     const id = geoIdFor(f, "tract");
     if (!id) continue;
-    const aland = Number(f.properties?.ALAND ?? f.properties?.AREALAND ?? 1_000_000);
+    const aland = Number(f.properties?.ALAND ?? f.properties?.AREALAND ?? 0);
+    // Skip water-only or unpopulated tracts (ALAND = 0 or very small)
+    if (aland < 10000) continue; // less than 10,000 sq meters = water/marsh
     const urbanWeight = 1 / Math.max(aland / 1_000_000, 0.1);
     // Quarter seed perturbs the per-tract jitter so distributions differ across quarters
     const jitter = 0.3 + seededRandom(seedHash(id + quarterSeed)) * 1.4;
@@ -414,7 +416,7 @@ export function DemoMapCanvas({ layers }: Props) {
     }
     const id = geoIdFor(f, "tract");
     const value = id ? activeCounts[id] ?? 0 : 0;
-    return { color: TRACT_COLOR, weight: 1.5, opacity: 0.8, fillColor: colorForValue(value, maxCount), fillOpacity: 0.55 };
+    return { color: TRACT_COLOR, weight: 1.5, opacity: 0.8, fillColor: colorForValue(value, maxCount), fillOpacity: 0.75 };
   }, [activeCounts, maxCount, layers.showData, dataLayer]);
 
   const zipStyle = useCallback((f: Feature | undefined) => {
@@ -423,7 +425,7 @@ export function DemoMapCanvas({ layers }: Props) {
     }
     const id = geoIdFor(f, "zip");
     const value = id ? activeCounts[id] ?? 0 : 0;
-    return { color: ZIP_COLOR, weight: 3, opacity: 0.85, dashArray: "10 5", fillColor: colorForValue(value, maxCount), fillOpacity: 0.55 };
+    return { color: ZIP_COLOR, weight: 3, opacity: 0.85, dashArray: "10 5", fillColor: colorForValue(value, maxCount), fillOpacity: 0.75 };
   }, [activeCounts, maxCount, layers.showData, dataLayer]);
 
   // ---- Interaction ----
@@ -758,6 +760,14 @@ function FitBounds({ tractGeo, zipGeo }: { tractGeo: FeatureCollection | null; z
 function geoIdFor(f: Feature | undefined, type: "tract" | "zip"): string | null {
   if (!f?.properties) return null;
   const p = f.properties;
-  if (type === "tract") return p.GEOID ?? p.geoid ?? null;
+  if (type === "tract") {
+    // Try direct GEOID, then construct from parts (Esri uses STATEFP+COUNTYFP+TRACTCE)
+    if (p.GEOID) return p.GEOID;
+    if (p.geoid) return p.geoid;
+    if (p.STATEFP && p.COUNTYFP && p.TRACTCE) return `${p.STATEFP}${p.COUNTYFP}${p.TRACTCE}`;
+    if (p.STATE && p.COUNTY && p.TRACT) return `${p.STATE}${p.COUNTY}${p.TRACT}`;
+    if (p.FIPS) return String(p.FIPS);
+    return null;
+  }
   return p.ZIP_CODE ?? p.ZIP ?? p.ZCTA5CE20 ?? p.ZCTA5 ?? p.BASENAME ?? p.GEOID20 ?? p.GEOID ?? null;
 }
