@@ -342,3 +342,21 @@ model CensusAcsCache {
   @@unique([geoId, geoType])
   @@index([expiresAt])
 }
+
+// =========================================================================
+// Isochrone cache — drive-time polygon GeoJSON from OpenRouteService
+// =========================================================================
+model IsochroneCache {
+  id             String   @id @default(cuid())
+  cacheKey       String   @unique // "{lat},{lng}:{trafficProfile}"
+  branchId       String
+  lat            Float
+  lng            Float
+  trafficProfile String   // 'am_peak' | 'midday' | 'pm_peak'
+  geojson        Json
+  fetchedAt      DateTime @default(now())
+  expiresAt      DateTime
+
+  @@index([branchId])
+  @@index([expiresAt])
+}

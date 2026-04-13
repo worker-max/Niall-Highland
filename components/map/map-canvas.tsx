@@ -217,17 +217,26 @@ export function MapCanvas({ counties, view, quarter, metric = "admissions" }: Pr
   const style = useCallback(
     (f: Feature | undefined) => {
       const id = geoIdFor(f, view);
-      const value = id ? counts[id] ?? 0 : 0;
+      let fillColor: string;
+
+      if (metric === "density") {
+        const density = id ? densityMap[id] ?? 0 : 0;
+        fillColor = colorForDensity(density, maxDensity);
+      } else {
+        const value = id ? counts[id] ?? 0 : 0;
+        fillColor = colorForValue(value, maxCount);
+      }
+
       return {
         color: "#384052",      // ink-800 — visible on light basemap
         weight: 1.2,
         opacity: 0.5,
-        fillColor: colorForValue(value, maxCount),
-        fillOpacity: 0.6,      // low enough to see roads underneath
+        fillColor,
+        fillOpacity: 0.65,     // slightly higher for density readability
         dashArray: "",
       };
     },
-    [counts, maxCount, view]
+    [counts, maxCount, densityMap, maxDensity, metric, view]
   );
 
   // ------ Interaction handlers ------
@@ -236,13 +245,32 @@ export function MapCanvas({ counties, view, quarter, metric = "admissions" }: Pr
       const id = geoIdFor(feature, view);
       if (!id) return;
       const count = counts[id] ?? 0;
+      const density = densityMap[id] ?? 0;
+      const sqMi = areaMap[id] ?? 0;
 
       // Hover tooltip
       const label = view === "tract" ? `Tract ${id}` : `ZIP ${id}`;
-      (layer as L.Path).bindTooltip(
-        `<strong>${label}</strong><br/>${count} admission${count !== 1 ? "s" : ""}`,
-        { sticky: true, className: "map-tooltip", direction: "top", offset: [0, -10] }
-      );
+      let tooltipContent: string;
+      if (metric === "density") {
+        const threshold = DENSITY_THRESHOLDS[densityDiscipline].threshold;
+        const productive = density >= threshold;
+        tooltipContent =
+          `<strong>${label}</strong><br/>` +
+          `${density.toFixed(1)} pts/sq mi<br/>` +
+          `${count} patient${count !== 1 ? "s" : ""} in ${sqMi.toFixed(2)} sq mi` +
+          (productive
+            ? `<br/><span style="color:#15803d;font-weight:600">Productive for ${densityDiscipline}</span>`
+            : `<br/><span style="color:#9a3412;font-weight:600">Below ${densityDiscipline} threshold</span>`);
+      } else {
+        tooltipContent =
+          `<strong>${label}</strong><br/>${count} ${metric === "adc" ? "active patient" : "admission"}${count !== 1 ? "s" : ""}`;
+      }
+      (layer as L.Path).bindTooltip(tooltipContent, {
+        sticky: true,
+        className: "map-tooltip",
+        direction: "top",
+        offset: [0, -10],
+      });
 
       // Hover highlight
       (layer as L.Path).on({
@@ -251,7 +279,7 @@ export function MapCanvas({ counties, view, quarter, metric = "admissions" }: Pr
           target.setStyle({
             weight: 3,
             opacity: 1,
-            color: "#0e6e60",   // teal-700 highlight
+            color: metric === "density" ? "#c41e1e" : "#0e6e60",
             fillOpacity: 0.8,
           });
           target.bringToFront();
@@ -261,7 +289,14 @@ export function MapCanvas({ counties, view, quarter, metric = "admissions" }: Pr
         },
         click: async () => {
           // Show sidebar immediately with count, then load demographics
-          setSelected({ geoId: id, count, demographics: null, loading: true });
+          setSelected({
+            geoId: id,
+            count,
+            density,
+            sqMiles: sqMi,
+            demographics: null,
+            loading: true,
+          });
           try {
             const res = await fetch(
               `/api/census/demographics?type=${view}&geoId=${id}`
@@ -286,7 +321,7 @@ export function MapCanvas({ counties, view, quarter, metric = "admissions" }: Pr
         },
       });
     },
-    [counts, view]
+    [counts, densityMap, areaMap, metric, densityDiscipline, view]
   );
 
   const bps = breakpoints(maxCount);
