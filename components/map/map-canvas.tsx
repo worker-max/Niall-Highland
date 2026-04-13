@@ -14,16 +14,28 @@ import type { DemographicProfile } from "@/lib/census";
 import "leaflet/dist/leaflet.css";
 
 // =========================================================================
-// Color scale — cream → deep teal, 6 steps
+// Color scales
 // =========================================================================
 
+// Default: cream → deep teal (admissions / ADC)
 const SCALE_COLORS = [
   "#fefaf0", // 0: zero / very low
   "#c6f7ec", // 1
   "#5ddfc7", // 2
   "#15b095", // 3
   "#0e6e60", // 4
-  "#10433d", // 5: highest density
+  "#10433d", // 5: highest
+];
+
+// Density: dark blue (lowest) → light blue → green → yellow → orange → red (highest)
+const DENSITY_COLORS = [
+  "#1a3a5c", // 0: lowest — dark blue
+  "#3b82a0", // 1: blue
+  "#5bb8a6", // 2: light blue / teal-green
+  "#a3c94f", // 3: green-yellow
+  "#f5c542", // 4: yellow-orange
+  "#e8612d", // 5: orange
+  "#c41e1e", // 6: red — highest density
 ];
 
 const SCALE_LABELS = ["None", "Low", "", "Medium", "", "High"];
@@ -38,10 +50,53 @@ function colorForValue(value: number, max: number): string {
   return SCALE_COLORS[idx];
 }
 
+function colorForDensity(density: number, max: number): string {
+  if (max <= 0 || density <= 0) return DENSITY_COLORS[0];
+  // Use sqrt scale so mid-range densities are more discernible
+  const ratio = Math.min(Math.sqrt(density / max), 1);
+  const idx = Math.min(
+    DENSITY_COLORS.length - 1,
+    Math.floor(ratio * (DENSITY_COLORS.length - 0.01))
+  );
+  return DENSITY_COLORS[idx];
+}
+
 function breakpoints(max: number): number[] {
   return SCALE_COLORS.map((_, i) =>
     Math.round((i / (SCALE_COLORS.length - 1)) * max)
   );
+}
+
+function densityBreakpoints(max: number): number[] {
+  // Match the sqrt scale used in colorForDensity
+  return DENSITY_COLORS.map((_, i) => {
+    const frac = i / (DENSITY_COLORS.length - 1);
+    return Math.round(frac * frac * max * 10) / 10; // invert sqrt: ratio^2 * max
+  });
+}
+
+// =========================================================================
+// Density thresholds by discipline (patients per sq mile)
+// Higher-skill disciplines need more density to be productive because
+// visit durations are longer and daily visit targets are lower.
+// =========================================================================
+
+type DisciplineKey = "RN" | "PT" | "OT" | "SLP" | "MSW" | "LPN" | "HHA";
+
+const DENSITY_THRESHOLDS: Record<DisciplineKey, { threshold: number; label: string }> = {
+  RN:  { threshold: 8,  label: "RN — 8+ pts/sq mi" },
+  PT:  { threshold: 8,  label: "PT — 8+ pts/sq mi" },
+  OT:  { threshold: 7,  label: "OT — 7+ pts/sq mi" },
+  SLP: { threshold: 6,  label: "SLP — 6+ pts/sq mi" },
+  MSW: { threshold: 5,  label: "MSW — 5+ pts/sq mi" },
+  LPN: { threshold: 6,  label: "LPN — 6+ pts/sq mi" },
+  HHA: { threshold: 4,  label: "HHA — 4+ pts/sq mi" },
+};
+
+// Convert ALAND (square meters from Census) to square miles
+const SQ_METERS_PER_SQ_MILE = 2_589_988.11;
+function alandToSqMiles(aland: number): number {
+  return aland / SQ_METERS_PER_SQ_MILE;
 }
 
 // =========================================================================

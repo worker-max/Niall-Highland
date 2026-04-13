@@ -23,41 +23,77 @@ type Props = {
 };
 
 type View = "tract" | "zip";
+type Metric = "admissions" | "adc" | "density";
+
+const METRIC_OPTIONS: { value: Metric; label: string }[] = [
+  { value: "admissions", label: "Admissions" },
+  { value: "adc", label: "ADC" },
+  { value: "density", label: "Density" },
+];
 
 export function HeatMapClient({ counties, quarters = [] }: Props) {
   const [view, setView] = useState<View>("tract");
   const [quarter, setQuarter] = useState<string>("all");
+  const [metric, setMetric] = useState<Metric>("admissions");
 
   return (
     <div className="card p-0 overflow-hidden">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ink-200 bg-white px-4 py-3">
-        {/* View toggle */}
-        <div className="flex items-center gap-3">
-          <label className="text-[10px] font-semibold uppercase tracking-wider text-ink-400">
-            View
-          </label>
-          <div className="inline-flex rounded-lg border border-ink-200 bg-ink-50 p-0.5">
-            {(["tract", "zip"] as View[]).map((v) => (
-              <button
-                key={v}
-                type="button"
-                onClick={() => setView(v)}
-                className={
-                  "rounded px-4 py-1.5 text-xs font-semibold transition " +
-                  (view === v
-                    ? "bg-white text-teal-900 shadow-sm"
-                    : "text-ink-500 hover:text-ink-700")
-                }
-              >
-                {v === "tract" ? "Census Tract" : "ZIP Code"}
-              </button>
-            ))}
+        <div className="flex flex-wrap items-center gap-4">
+          {/* View toggle */}
+          <div className="flex items-center gap-2">
+            <label className="text-[10px] font-semibold uppercase tracking-wider text-ink-400">
+              View
+            </label>
+            <div className="inline-flex rounded-lg border border-ink-200 bg-ink-50 p-0.5">
+              {(["tract", "zip"] as View[]).map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setView(v)}
+                  className={
+                    "rounded px-4 py-1.5 text-xs font-semibold transition " +
+                    (view === v
+                      ? "bg-white text-teal-900 shadow-sm"
+                      : "text-ink-500 hover:text-ink-700")
+                  }
+                >
+                  {v === "tract" ? "Census Tract" : "ZIP Code"}
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="hidden sm:block text-[10px] text-ink-400">
-            {view === "tract"
-              ? "Smaller boundaries, higher precision"
-              : "Larger areas, more familiar to clinicians"}
+
+          {/* Metric toggle */}
+          <div className="flex items-center gap-2">
+            <label className="text-[10px] font-semibold uppercase tracking-wider text-ink-400">
+              Metric
+            </label>
+            <div className="inline-flex rounded-lg border border-ink-200 bg-ink-50 p-0.5">
+              {METRIC_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setMetric(opt.value)}
+                  className={
+                    "rounded px-4 py-1.5 text-xs font-semibold transition " +
+                    (metric === opt.value
+                      ? "bg-white text-teal-900 shadow-sm"
+                      : "text-ink-500 hover:text-ink-700")
+                  }
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            <div className="hidden lg:block text-[10px] text-ink-400">
+              {metric === "admissions"
+                ? "Raw admission counts"
+                : metric === "adc"
+                  ? "Active daily census"
+                  : "Patients per sq mile"}
+            </div>
           </div>
         </div>
 
@@ -82,7 +118,7 @@ export function HeatMapClient({ counties, quarters = [] }: Props) {
       </div>
 
       {/* Map */}
-      <MapCanvas counties={counties} view={view} quarter={quarter} />
+      <MapCanvas counties={counties} view={view} quarter={quarter} metric={metric} />
     </div>
   );
 }

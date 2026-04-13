@@ -192,6 +192,9 @@ export function DemoMap() {
             ? " Colors show new admissions for the selected period."
             : " Colors show average daily census (active patients on service)."
           : " Heat map data is off — boundaries only."}
+        {layers.showTrends && layers.showData
+          ? " Trend arrows show quarter-over-quarter change (>10% = up/down)."
+          : ""}
       </div>
 
       <DemoMapCanvas layers={layers} />
