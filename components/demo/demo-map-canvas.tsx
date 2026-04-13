@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { MapContainer, TileLayer, GeoJSON, useMap } from "react-leaflet";
 import { TrafficOverlay } from "./traffic-overlay";
+import { TrendOverlay } from "../map/trend-overlay";
 import L from "leaflet";
 import type { FeatureCollection, Feature } from "geojson";
 import type { DemographicProfile } from "@/lib/census";
@@ -76,6 +77,25 @@ function seededRandom(seed: number): number {
 
 const QUARTER_ADMISSIONS: Record<string, number> = {
   "2025-Q1": 847, "2024-Q4": 812, "2024-Q3": 798, "2024-Q2": 831, all: 3288,
+};
+
+/** Map each quarter to its predecessor (for QoQ trend computation). */
+const PREVIOUS_QUARTER: Record<string, string> = {
+  "2025-Q1": "2024-Q4",
+  "2024-Q4": "2024-Q3",
+  "2024-Q3": "2024-Q2",
+  "2024-Q2": "2024-Q1",
+  all: "2024-Q4", // "all" compares against the latest individual quarter
+};
+
+/** Synthetic admissions for the "previous" quarter of each quarter.
+ *  These are slightly different totals so trends aren't all flat. */
+const PREV_QUARTER_ADMISSIONS: Record<string, number> = {
+  "2024-Q4": 812,
+  "2024-Q3": 798,
+  "2024-Q2": 831,
+  "2024-Q1": 780,
+  all: 3221,
 };
 
 // ADC = admissions * factor. Factor varies: older/sicker populations have

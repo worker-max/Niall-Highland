@@ -104,12 +104,14 @@ function alandToSqMiles(aland: number): number {
 // =========================================================================
 
 type View = "tract" | "zip";
+type Metric = "admissions" | "adc" | "density";
 type Counts = Record<string, number>;
 
 type Props = {
   counties: County[];
   view: View;
   quarter: string;
+  metric?: Metric;
 };
 
 type SelectedRegion = {
@@ -123,11 +125,12 @@ type SelectedRegion = {
 // Component
 // =========================================================================
 
-export function MapCanvas({ counties, view, quarter }: Props) {
+export function MapCanvas({ counties, view, quarter, metric = "admissions" }: Props) {
   const [geo, setGeo] = useState<FeatureCollection | null>(null);
   const [counts, setCounts] = useState<Counts>({});
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<SelectedRegion | null>(null);
+  const [densityDiscipline, setDensityDiscipline] = useState<DisciplineKey>("RN");
   const geoJsonRef = useRef<L.GeoJSON | null>(null);
   const mapRef = useRef<L.Map | null>(null);
 
@@ -170,12 +173,45 @@ export function MapCanvas({ counties, view, quarter }: Props) {
       .catch(() => setCounts({}));
   }, [view, quarter]);
 
-  // ------ Max count for color scale ------
+  // ------ Build area lookup: geoId → sq miles (from ALAND in boundary data) ------
+  const areaMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    if (!geo) return map;
+    for (const f of geo.features) {
+      const id = geoIdFor(f, view);
+      if (!id) continue;
+      const aland = f.properties?.ALAND;
+      if (aland != null && aland > 0) {
+        map[id] = alandToSqMiles(aland);
+      }
+    }
+    return map;
+  }, [geo, view]);
+
+  // ------ Compute density map: geoId → patients per sq mile ------
+  const densityMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const [id, count] of Object.entries(counts)) {
+      const sqMi = areaMap[id];
+      if (sqMi && sqMi > 0) {
+        map[id] = count / sqMi;
+      }
+    }
+    return map;
+  }, [counts, areaMap]);
+
+  // ------ Max count / max density for color scale ------
   const maxCount = useMemo(() => {
     let m = 0;
     for (const v of Object.values(counts)) if (v > m) m = v;
     return m;
   }, [counts]);
+
+  const maxDensity = useMemo(() => {
+    let m = 0;
+    for (const v of Object.values(densityMap)) if (v > m) m = v;
+    return m;
+  }, [densityMap]);
 
   // ------ Style each feature ------
   const style = useCallback(
