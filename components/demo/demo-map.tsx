@@ -24,10 +24,14 @@ export type LayerConfig = {
   showData: boolean;
   showTraffic: boolean;
   showTrends: boolean;
+  showPins: boolean;
   trafficPeriod: TrafficPeriod;
   metric: DataMetric;
   quarter: string;
+  pinTypes: Set<string>;
 };
+
+const ALL_PIN_TYPES = new Set(["HOSPITAL", "SNF", "REHAB", "ALF"]);
 
 export function DemoMap() {
   const [layers, setLayers] = useState<LayerConfig>({
@@ -36,13 +40,24 @@ export function DemoMap() {
     showData: true,
     showTraffic: false,
     showTrends: false,
+    showPins: true,
     trafficPeriod: "am",
     metric: "admissions",
     quarter: "2025-Q1",
+    pinTypes: new Set(ALL_PIN_TYPES),
   });
 
-  const toggle = (key: "showTracts" | "showZips" | "showData" | "showTraffic" | "showTrends") => {
+  const toggle = (key: "showTracts" | "showZips" | "showData" | "showTraffic" | "showTrends" | "showPins") => {
     setLayers((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const togglePinType = (type: string) => {
+    setLayers((prev) => {
+      const next = new Set(prev.pinTypes);
+      if (next.has(type)) next.delete(type);
+      else next.add(type);
+      return { ...prev, pinTypes: next };
+    });
   };
 
   return (
@@ -171,6 +186,48 @@ export function DemoMap() {
             </select>
           </div>
         </div>
+      </div>
+
+      {/* Referral sources toolbar row */}
+      <div className="flex flex-wrap items-center gap-3 border-b border-ink-200 bg-white px-4 py-2">
+        <label className="flex items-center gap-1.5 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={layers.showPins}
+            onChange={() => toggle("showPins")}
+            className="h-3.5 w-3.5 rounded border-ink-300 text-red-500 focus:ring-red-400"
+          />
+          <span className="text-xs font-medium text-ink-700">Referral Sources</span>
+        </label>
+        {layers.showPins && (
+          <div className="flex gap-1.5">
+            {([
+              { type: "HOSPITAL", label: "Hospitals", color: "#E05C45" },
+              { type: "SNF", label: "SNFs", color: "#3B82F6" },
+              { type: "REHAB", label: "Rehab", color: "#D4952A" },
+              { type: "ALF", label: "ALFs", color: "#5B7FC7" },
+            ] as const).map((ft) => (
+              <button
+                key={ft.type}
+                type="button"
+                onClick={() => togglePinType(ft.type)}
+                className={
+                  "flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold border transition " +
+                  (layers.pinTypes.has(ft.type)
+                    ? "text-white border-transparent"
+                    : "bg-white text-ink-400 border-ink-200")
+                }
+                style={layers.pinTypes.has(ft.type) ? { backgroundColor: ft.color } : {}}
+              >
+                <span
+                  className="h-2 w-2 rounded-full"
+                  style={{ backgroundColor: ft.color }}
+                />
+                {ft.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Hint bar */}

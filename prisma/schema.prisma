@@ -34,6 +34,7 @@ model Branch {
   coverageSlots    CoverageSlot[]
   schoolCalendars  SchoolCalendar[]
   sensitiveWindows SensitiveWindow[]
+  referralSources  ReferralSource[]
 }
 
 enum Tier {
@@ -359,4 +360,46 @@ model IsochroneCache {
 
   @@index([branchId])
   @@index([expiresAt])
+}
+
+// =========================================================================
+// Referral Source Pins — hospitals, SNFs, rehab, ALFs, custom facilities
+// =========================================================================
+
+enum FacilityType {
+  HOSPITAL
+  SNF
+  REHAB
+  ALF
+  PHYSICIAN_OFFICE
+  CLINIC
+  CUSTOM
+  OTHER
+}
+
+model ReferralSource {
+  id            String       @id @default(cuid())
+  branchId      String
+  branch        Branch       @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  cmsProviderId String?      // CMS CCN (6-char) — null for custom pins
+  facilityType  FacilityType
+  name          String
+  address       String?
+  city          String?
+  state         String?      // 2-letter abbr
+  zip           String?
+  lat           Float
+  lng           Float
+  bedCount      Int?
+  phone         String?
+  cmsData       Json?        // raw CMS fields for future use
+  isCustom      Boolean      @default(false)
+  isHidden      Boolean      @default(false) // soft-delete for CMS pins
+  notes         String?      // user annotations
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@unique([branchId, cmsProviderId])
+  @@index([branchId, facilityType])
+  @@index([branchId, isHidden])
 }

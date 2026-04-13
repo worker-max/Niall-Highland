@@ -64,6 +64,20 @@ body {
   border-top-color: rgba(255, 255, 255, 0.95) !important;
 }
 
+/* Referral source pins — strip Leaflet default icon styles */
+.referral-pin {
+  background: none !important;
+  border: none !important;
+}
+
+.referral-popup .leaflet-popup-content-wrapper {
+  border-radius: 8px !important;
+  padding: 0 !important;
+}
+.referral-popup .leaflet-popup-content {
+  margin: 12px 14px !important;
+}
+
 /* Crosshair cursor when in isochrone click-to-place mode */
 .isochrone-click-mode .leaflet-container {
   cursor: crosshair !important;

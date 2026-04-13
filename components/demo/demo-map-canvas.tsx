@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { MapContainer, TileLayer, GeoJSON, useMap } from "react-leaflet";
 import { TrafficOverlay } from "./traffic-overlay";
 import { TrendOverlay } from "../map/trend-overlay";
+import { ReferralPinsLayer } from "../map/referral-pins";
+import { CHARLESTON_REFERRAL_SOURCES } from "./demo-referral-data";
 import L from "leaflet";
 import type { FeatureCollection, Feature } from "geojson";
 import type { DemographicProfile } from "@/lib/census";
@@ -521,6 +523,14 @@ export function DemoMapCanvas({ layers }: Props) {
             previousCounts={previousCounts}
             geoType={dataLayer}
             threshold={0.1}
+          />
+        )}
+
+        {/* Referral source pins */}
+        {layers.showPins && (
+          <ReferralPinsLayer
+            pins={CHARLESTON_REFERRAL_SOURCES}
+            visibleTypes={layers.pinTypes}
           />
         )}
 
