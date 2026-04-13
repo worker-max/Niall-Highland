@@ -26,19 +26,43 @@ const DEMO_COUNTIES = [
 // Color scale — cream → deep teal
 // =========================================================================
 
+// White for zero, then 6 color steps for nonzero values
+const COLOR_ZERO = "#ffffff";
 const SCALE_COLORS = [
-  "#fefaf0", "#c6f7ec", "#5ddfc7", "#15b095", "#0e6e60", "#10433d",
+  "#daf5ee", // very light teal (lowest nonzero)
+  "#8eeddb", // light teal
+  "#3ec9a7", // medium teal
+  "#15b095", // strong teal
+  "#0e6e60", // deep teal
+  "#10433d", // darkest
 ];
 
-function colorForValue(value: number, max: number): string {
-  if (max <= 0 || value <= 0) return SCALE_COLORS[0];
-  const ratio = Math.min(value / max, 1);
-  const idx = Math.min(SCALE_COLORS.length - 1, Math.floor(ratio * (SCALE_COLORS.length - 0.01)));
-  return SCALE_COLORS[idx];
+// Quantile-based coloring: sort all nonzero values into equal-sized
+// buckets so every color in the scale gets used, not just cream + dark teal.
+let _quantileBreaks: number[] = [];
+
+function buildQuantiles(counts: Record<string, number>) {
+  const values = Object.values(counts).filter((v) => v > 0).sort((a, b) => a - b);
+  if (values.length === 0) { _quantileBreaks = []; return; }
+  const n = SCALE_COLORS.length;
+  _quantileBreaks = [];
+  for (let i = 0; i < n; i++) {
+    const idx = Math.min(values.length - 1, Math.floor(((i + 1) / n) * values.length));
+    _quantileBreaks.push(values[idx]);
+  }
 }
 
-function breakpoints(max: number): number[] {
-  return SCALE_COLORS.map((_, i) => Math.round((i / (SCALE_COLORS.length - 1)) * max));
+function colorForValue(value: number): string {
+  if (value <= 0) return COLOR_ZERO;
+  if (_quantileBreaks.length === 0) return SCALE_COLORS[0];
+  for (let i = 0; i < _quantileBreaks.length; i++) {
+    if (value <= _quantileBreaks[i]) return SCALE_COLORS[i];
+  }
+  return SCALE_COLORS[SCALE_COLORS.length - 1];
+}
+
+function legendBreaks(): number[] {
+  return _quantileBreaks.length > 0 ? _quantileBreaks : [0, 0, 0, 0, 0, 0];
 }
 
 // =========================================================================
@@ -399,6 +423,9 @@ export function DemoMapCanvas({ layers }: Props) {
     return m;
   }, [activeCounts]);
 
+  // Build quantile breaks whenever counts change
+  useMemo(() => { buildQuantiles(activeCounts); }, [activeCounts]);
+
   // ---- Previous-quarter counts for trend overlay ----
   const previousCounts = useMemo(() => {
     if (!layers.showData) return {};
@@ -416,7 +443,7 @@ export function DemoMapCanvas({ layers }: Props) {
     }
     const id = geoIdFor(f, "tract");
     const value = id ? activeCounts[id] ?? 0 : 0;
-    return { color: TRACT_COLOR, weight: 1.5, opacity: 0.8, fillColor: colorForValue(value, maxCount), fillOpacity: 0.75 };
+    return { color: TRACT_COLOR, weight: 1.5, opacity: 0.8, fillColor: colorForValue(value), fillOpacity: 0.75 };
   }, [activeCounts, maxCount, layers.showData, dataLayer]);
 
   const zipStyle = useCallback((f: Feature | undefined) => {
@@ -425,7 +452,7 @@ export function DemoMapCanvas({ layers }: Props) {
     }
     const id = geoIdFor(f, "zip");
     const value = id ? activeCounts[id] ?? 0 : 0;
-    return { color: ZIP_COLOR, weight: 3, opacity: 0.85, dashArray: "10 5", fillColor: colorForValue(value, maxCount), fillOpacity: 0.75 };
+    return { color: ZIP_COLOR, weight: 3, opacity: 0.85, dashArray: "10 5", fillColor: colorForValue(value), fillOpacity: 0.75 };
   }, [activeCounts, maxCount, layers.showData, dataLayer]);
 
   // ---- Interaction ----
@@ -455,7 +482,7 @@ export function DemoMapCanvas({ layers }: Props) {
             weight: type === "tract" ? 3 : 5, opacity: 1,
             color: type === "tract" ? TRACT_COLOR : ZIP_COLOR,
             fillOpacity: layers.showData ? 0.8 : 0.12,
-            fillColor: layers.showData ? colorForValue(displayCount, maxCount) : (type === "tract" ? TRACT_COLOR : ZIP_COLOR),
+            fillColor: layers.showData ? colorForValue(displayCount) : (type === "tract" ? TRACT_COLOR : ZIP_COLOR),
           });
           (e.target as L.Path).bringToFront();
         },
@@ -479,7 +506,7 @@ export function DemoMapCanvas({ layers }: Props) {
     [tractAdmissions, tractAdc, zipAdmissions, zipAdc, activeCounts, maxCount, layers.showData, layers.metric]
   );
 
-  const bps = breakpoints(maxCount);
+  const bps = legendBreaks();
   const metricLabel = layers.metric === "admissions" ? "Admissions" : "Avg Daily Census";
 
   return (
@@ -547,10 +574,14 @@ export function DemoMapCanvas({ layers }: Props) {
             {metricLabel} ({dataLayer === "tract" ? "by tract" : "by ZIP"})
           </div>
           <div className="flex gap-0.5">
+            <div className="text-center">
+              <div className="h-3 w-8 border border-ink-200" style={{ backgroundColor: COLOR_ZERO }} />
+              <div className="mt-0.5 text-[9px] text-ink-500">0</div>
+            </div>
             {SCALE_COLORS.map((color, i) => (
               <div key={i} className="text-center">
                 <div className="h-3 w-8 border border-ink-200" style={{ backgroundColor: color }} />
-                <div className="mt-0.5 text-[9px] text-ink-500">{bps[i]}</div>
+                <div className="mt-0.5 text-[9px] text-ink-500">{bps[i] > 0 ? `≤${bps[i]}` : ""}</div>
               </div>
             ))}
           </div>
