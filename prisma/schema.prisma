@@ -36,6 +36,7 @@ model Branch {
   sensitiveWindows SensitiveWindow[]
   referralSources      ReferralSource[]
   territoryColorMaps   TerritoryColorMap[]
+  dataSnapshots        DataSnapshot[]
 }
 
 enum Tier {
@@ -431,4 +432,39 @@ model TerritoryColorMap {
   updatedAt    DateTime   @updatedAt
 
   @@index([branchId, discipline])
+}
+
+// =========================================================================
+// Data Snapshots — quarterly history of aggregated ops data
+//
+// All snapshots are IMMUTABLE. Re-pasting creates a new snapshot that
+// supersedes the prior one. Historical snapshots are kept for audit trail.
+// =========================================================================
+
+enum DataSnapshotType {
+  ADMISSIONS_AGG    // aggregated admission counts by geography
+  ADC_AGG           // aggregated daily census by geography
+  REFERRAL_SOURCES  // list of referral facilities
+  CLINICIAN_ROSTER  // list of clinicians (discipline + number only)
+}
+
+enum IntakeMode {
+  HIPAA_SAFE        // pre-aggregated counts only, no PHI ever touches our servers
+  ENTERPRISE_PHI    // patient-level rows with in-house geocoding (requires BAA)
+}
+
+model DataSnapshot {
+  id            String           @id @default(cuid())
+  branchId      String
+  branch        Branch           @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  type          DataSnapshotType
+  intakeMode    IntakeMode       @default(HIPAA_SAFE)
+  periodLabel   String           // "2025-Q1", "2025-01", or "current" for live rosters
+  rowCount      Int
+  data          Json             // aggregated rows or roster entries
+  supersededBy  String?          // ID of snapshot that replaced this one, null = active
+  createdAt     DateTime         @default(now())
+
+  @@index([branchId, type, periodLabel])
+  @@index([branchId, supersededBy])
 }

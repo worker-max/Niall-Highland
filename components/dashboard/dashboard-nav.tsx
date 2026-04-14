@@ -16,6 +16,10 @@ const NAV: NavItem[] = [
   { href: "/dashboard", label: "Overview", minTier: "MAP" },
   { href: "/dashboard/setup", label: "Setup", minTier: "MAP" },
 
+  { section: "Data", href: "/dashboard/data", label: "Data Studio", minTier: "MAP" },
+  { href: "/dashboard/data/compliance", label: "Compliance Packet", minTier: "MAP" },
+  { href: "/dashboard/enterprise-data", label: "Enterprise Data Studio", minTier: "OPS" },
+
   { section: "Map", href: "/dashboard/map", label: "Heat Map", minTier: "MAP" },
   { href: "/dashboard/map/adc", label: "ADC Overlay", minTier: "OPS" },
 
