@@ -43,11 +43,13 @@ export function TrafficOverlay({ period }: Props) {
           lineJoin: "round",
         });
 
+        const ratioText = info.ratio ? `+${Math.round((info.ratio - 1) * 100)}% travel time` : "";
         line.bindTooltip(
           `<strong>${corridor.road}</strong><br/>` +
           `${corridor.name}<br/>` +
           `<span style="color:${color};font-weight:600">${levelLabel(info.level)}</span> — ` +
           `${directionLabel(info.direction)}<br/>` +
+          `<span style="font-size:10px;color:#666">${ratioText}</span><br/>` +
           `<span style="font-size:10px;color:#888">${corridor.note ?? ""}</span>`,
           { sticky: true, className: "map-tooltip", direction: "top" }
         );
