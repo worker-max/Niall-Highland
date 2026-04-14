@@ -4,10 +4,12 @@ import { requireBranch } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
 const schema = z.object({
-  discipline: z.enum(["RN", "PT", "OT", "HHA", "SLP", "LPN", "MSW"]),
+  discipline: z.enum(["RN", "LPN", "PT", "PTA", "OT", "COTA", "HHA", "SLP", "MSW", "OTHER"]),
   number: z.number().int().positive(),
   tenureRank: z.number().int().positive(),
   homeZip: z.string().length(5).nullable().optional(),
+  homeTract: z.string().nullable().optional(),
+  employmentType: z.enum(["FULL_TIME", "PER_DIEM"]).optional(),
 });
 
 export async function POST(req: Request) {
@@ -26,6 +28,8 @@ export async function POST(req: Request) {
         number: parsed.data.number,
         tenureRank: parsed.data.tenureRank,
         homeZip: parsed.data.homeZip ?? null,
+        homeTract: parsed.data.homeTract ?? null,
+        employmentType: parsed.data.employmentType ?? "FULL_TIME",
       },
     });
     return NextResponse.json({ clinician });

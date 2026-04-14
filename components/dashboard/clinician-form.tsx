@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
-const DISCIPLINES = ["RN", "PT", "OT", "HHA", "SLP", "LPN", "MSW"] as const;
+const DISCIPLINES = ["RN", "LPN", "PT", "PTA", "OT", "COTA", "HHA", "SLP", "MSW", "OTHER"] as const;
 
 export function ClinicianForm() {
   const router = useRouter();
@@ -14,6 +14,7 @@ export function ClinicianForm() {
     number: "",
     tenureRank: "",
     homeZip: "",
+    employmentType: "FULL_TIME",
   });
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -28,6 +29,7 @@ export function ClinicianForm() {
           number: Number(form.number),
           tenureRank: Number(form.tenureRank),
           homeZip: form.homeZip || null,
+          employmentType: form.employmentType,
         }),
       });
       if (!res.ok) {
@@ -35,7 +37,7 @@ export function ClinicianForm() {
         setError(body.error ?? "Could not add clinician");
         return;
       }
-      setForm({ discipline: form.discipline, number: "", tenureRank: "", homeZip: "" });
+      setForm({ discipline: form.discipline, number: "", tenureRank: "", homeZip: "", employmentType: form.employmentType });
       router.refresh();
     });
   }

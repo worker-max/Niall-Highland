@@ -19,7 +19,8 @@ const NAV: NavItem[] = [
   { section: "Map", href: "/dashboard/map", label: "Heat Map", minTier: "MAP" },
   { href: "/dashboard/map/adc", label: "ADC Overlay", minTier: "OPS" },
 
-  { section: "Ops", href: "/dashboard/territories", label: "Territory Builder", minTier: "OPS" },
+  { section: "Ops", href: "/dashboard/territories", label: "Territory Agent", minTier: "OPS" },
+  { href: "/dashboard/territories/builder", label: "Territory Builder", minTier: "OPS" },
 
   { section: "Branch", href: "/dashboard/pto", label: "PTO Manager", minTier: "BRANCH" },
   { href: "/dashboard/pto/rules", label: "PTO Rules", minTier: "BRANCH" },

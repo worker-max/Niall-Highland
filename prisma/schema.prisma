@@ -34,7 +34,8 @@ model Branch {
   coverageSlots    CoverageSlot[]
   schoolCalendars  SchoolCalendar[]
   sensitiveWindows SensitiveWindow[]
-  referralSources  ReferralSource[]
+  referralSources      ReferralSource[]
+  territoryColorMaps   TerritoryColorMap[]
 }
 
 enum Tier {
@@ -64,15 +65,17 @@ model County {
 // Clinician roster — identified by discipline + number only
 // =========================================================================
 model Clinician {
-  id         String     @id @default(cuid())
-  branchId   String
-  branch     Branch     @relation(fields: [branchId], references: [id], onDelete: Cascade)
-  discipline Discipline
-  number     Int
-  tenureRank Int
-  homeZip    String?
-  active     Boolean    @default(true)
-  createdAt  DateTime   @default(now())
+  id             String         @id @default(cuid())
+  branchId       String
+  branch         Branch         @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  discipline     Discipline
+  number         Int
+  tenureRank     Int
+  homeZip        String?
+  homeTract      String?        // optional Census tract for home location
+  employmentType EmploymentType @default(FULL_TIME)
+  active         Boolean        @default(true)
+  createdAt      DateTime       @default(now())
 
   territories   TerritoryAssignment[]
   ptoRequests   PtoRequest[]
@@ -85,12 +88,20 @@ model Clinician {
 
 enum Discipline {
   RN
+  LPN
   PT
+  PTA
   OT
+  COTA
   HHA
   SLP
-  LPN
   MSW
+  OTHER
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PER_DIEM
 }
 
 // =========================================================================
@@ -402,4 +413,22 @@ model ReferralSource {
   @@unique([branchId, cmsProviderId])
   @@index([branchId, facilityType])
   @@index([branchId, isHidden])
+}
+
+// =========================================================================
+// Territory Color Map — colored territory assignments per discipline
+// =========================================================================
+
+model TerritoryColorMap {
+  id           String     @id @default(cuid())
+  branchId     String
+  branch       Branch     @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  discipline   Discipline
+  label        String     // e.g. "PT Territories Q1 2025"
+  geoType      String     // 'tract' | 'zip'
+  assignments  Json       // Array of { geoId, colorIndex, clinicianLabel }
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([branchId, discipline])
 }
