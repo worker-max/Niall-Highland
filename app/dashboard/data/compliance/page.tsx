@@ -108,6 +108,35 @@ export default async function CompliancePacketPage() {
       </section>
 
       <section className="card">
+        <h2 className="text-lg font-semibold text-teal-900">Metrics accepted</h2>
+        <p className="mt-2 text-sm text-ink-700">
+          Each metric follows identical HIPAA-safe intake: client-side PHI scan,
+          cell suppression ≥11, aggregated-only input.
+        </p>
+        <table className="mt-3 w-full text-sm">
+          <thead>
+            <tr className="border-b border-ink-200 text-left text-xs uppercase tracking-wide text-ink-500">
+              <th className="py-2">Metric</th>
+              <th className="py-2">Period</th>
+              <th className="py-2">Columns</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-ink-100">
+            <tr>
+              <td className="py-2 font-medium">Admissions</td>
+              <td className="py-2">Quarter</td>
+              <td className="py-2 font-mono text-xs">zip · year · quarter · count</td>
+            </tr>
+            <tr>
+              <td className="py-2 font-medium">Active Daily Census (ADC)</td>
+              <td className="py-2">Month</td>
+              <td className="py-2 font-mono text-xs">zip · year · month · count</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section className="card">
         <h2 className="text-lg font-semibold text-teal-900">HCHB report recipe</h2>
         <p className="mt-2 text-sm text-ink-700">
           The branch director runs this once in their HCHB Report Builder, saves the report,

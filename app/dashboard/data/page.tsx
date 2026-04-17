@@ -1,7 +1,9 @@
 import { requireBranch } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import Link from "next/link";
-import { AdmissionsPasteFlow } from "@/components/data/admissions-paste-flow";
+import { MetricPasteFlow } from "@/components/data/metric-paste-flow";
+import { ADMISSIONS } from "@/lib/metric-intake/registry";
+import { DataStudioTabs } from "@/components/data/data-studio-tabs";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +11,7 @@ export default async function DataStudioPage() {
   const branch = await requireBranch();
 
   const snapshots = await prisma.dataSnapshot.findMany({
-    where: { branchId: branch.id, supersededBy: null },
+    where: { branchId: branch.id, type: ADMISSIONS.snapshotType, supersededBy: null },
     orderBy: { createdAt: "desc" },
     take: 20,
   });
@@ -28,7 +30,7 @@ export default async function DataStudioPage() {
       <div className="card mb-6 border-l-4 border-teal-500 bg-teal-50/50">
         <h3 className="text-sm font-semibold text-teal-900">HIPAA-Safe Intake</h3>
         <p className="mt-1 text-xs text-ink-600">
-          This tool accepts only <strong>aggregated counts by geography and quarter</strong> —
+          This tool accepts only <strong>aggregated counts by geography and period</strong> —
           no patient names, no addresses, no exact dates, no MRNs, no diagnoses. Your browser
           scans every paste for PHI patterns and blocks transmission before anything leaves
           your machine. See the{" "}
@@ -39,30 +41,9 @@ export default async function DataStudioPage() {
         </p>
       </div>
 
-      {/* Tab nav */}
-      <div className="mb-4 flex gap-1 border-b border-ink-200">
-        {[
-          { href: "/dashboard/data", label: "Admissions", active: true },
-          { href: "/dashboard/data/adc", label: "Active Census (ADC)" },
-          { href: "/dashboard/data/referrals", label: "Referral Sources" },
-          { href: "/dashboard/data/clinicians", label: "Clinician Roster" },
-        ].map((t) => (
-          <Link
-            key={t.href}
-            href={t.href}
-            className={
-              "border-b-2 px-4 py-2 text-sm font-semibold transition " +
-              ((t as any).active
-                ? "border-teal-600 text-teal-900"
-                : "border-transparent text-ink-500 hover:text-ink-700")
-            }
-          >
-            {t.label}
-          </Link>
-        ))}
-      </div>
+      <DataStudioTabs activeId="admissions" />
 
-      <AdmissionsPasteFlow existingSnapshots={snapshots.filter((s) => s.type === "ADMISSIONS_AGG")} />
+      <MetricPasteFlow metric={ADMISSIONS} existingSnapshots={snapshots} />
     </div>
   );
 }
