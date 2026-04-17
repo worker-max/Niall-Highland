@@ -135,12 +135,23 @@ export function AdmissionsPasteFlow({ existingSnapshots }: Props) {
       <div className="space-y-6">
         {/* What we need */}
         <div className="card">
-          <h2 className="text-sm font-semibold text-teal-900">What to paste</h2>
-          <p className="mt-1 text-xs text-ink-600">
-            An aggregated admission report from your EMR, with exactly four columns in this order:
-            <strong> ZIP code, year, quarter, count</strong>.
-            Run your EMR&apos;s report with cell suppression of counts below 11 (we&apos;ll re-check).
-          </p>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-sm font-semibold text-teal-900">What to paste</h2>
+              <p className="mt-1 text-xs text-ink-600">
+                An aggregated admission report from your EMR, with exactly four columns in this order:
+                <strong> ZIP code, year, quarter, count</strong>.
+                Run your EMR&apos;s report with cell suppression of counts below 11 (we&apos;ll re-check).
+              </p>
+            </div>
+            <a
+              href="/api/templates/excel?type=admissions"
+              download
+              className="btn-secondary shrink-0 text-xs"
+            >
+              Download Excel template
+            </a>
+          </div>
 
           <div className="mt-3 rounded-lg bg-cream-50 p-3 font-mono text-xs">
             <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-ink-500">
