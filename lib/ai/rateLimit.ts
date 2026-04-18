@@ -48,6 +48,18 @@ export const otherTeacherLimit = createLimiter(
   "1 h",
 );
 
+export const lessonPlanLimit = createLimiter(
+  "demo:lesson-plan",
+  10,
+  "1 h",
+);
+
+export const curriculumAuditLimit = createLimiter(
+  "demo:curriculum-audit",
+  5,
+  "1 h",
+);
+
 export function ipFromRequest(req: Request): string {
   return (
     req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
