@@ -45,3 +45,7 @@ prisma/migrations/dev.db*
 *.tsbuildinfo
 .next/
 node_modules/
+
+# niall-highland-site lives in its own repo (worker-max/Niall-Highland);
+# kept locally for convenience but not tracked here.
+niall-highland-site/
