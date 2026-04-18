@@ -1,0 +1,206 @@
+@import "tailwindcss";
+
+/* -----------------------------------------------------------------------------
+ * Design tokens — seed §2.2, §2.3, §2.4, §2.5
+ * Dark-mode-first. Light mode inverts surface + text; accent/signal tuned.
+ * Critical: never pure white or pure black. Editorial warmth matters.
+ * ---------------------------------------------------------------------------*/
+
+:root {
+  /* Surfaces — editorial dark (default) */
+  --ink-900: #0B0D0E;
+  --ink-800: #131619;
+  --ink-700: #1C2024;
+  --ink-600: #2A2F35;
+
+  /* Text */
+  --paper-50: #F4EFE7;
+  --paper-200: #D9D2C5;
+  --paper-400: #8F887C;
+
+  /* Accent */
+  --accent-500: #3E8B87;
+  --accent-400: #5BA8A4;
+  --accent-900: #0F2322;
+
+  /* AI-native signal (demo shells only) */
+  --signal-400: #7FE3C7;
+  --signal-glow: rgba(127, 227, 199, 0.15);
+
+  /* Semantic */
+  --success-500: #6EAE6E;
+  --warning-500: #D4A853;
+  --danger-500: #C55353;
+
+  /* Semantic role aliases — reference these in components, not raw scale values. */
+  --surface: var(--ink-900);
+  --surface-raised: var(--ink-800);
+  --surface-elevated: var(--ink-700);
+  --border: var(--ink-600);
+  --text: var(--paper-50);
+  --text-muted: var(--paper-200);
+  --text-faint: var(--paper-400);
+  --accent: var(--accent-500);
+  --accent-hover: var(--accent-400);
+  --signal: var(--signal-400);
+
+  /* Typography — self-hosted via next/font (see app/layout.tsx). */
+  --font-display: var(--font-fraunces), "GT Sectra", "Tiempos Headline", Georgia, serif;
+  --font-body: var(--font-inter), "Söhne", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), "Berkeley Mono", "IBM Plex Mono", monospace;
+
+  /* Fluid type scale (§2.3) */
+  --text-hero: clamp(3.5rem, 8vw, 7.5rem);
+  --text-display: clamp(2.5rem, 5vw, 4.5rem);
+  --text-h1: clamp(2rem, 3.5vw, 3rem);
+  --text-h2: clamp(1.5rem, 2.5vw, 2rem);
+  --text-h3: 1.25rem;
+  --text-lead: 1.25rem;
+  --text-body: 1.0625rem;
+  --text-small: 0.875rem;
+  --text-caption: 0.75rem;
+
+  /* Line heights */
+  --leading-display: 1.05;
+  --leading-body: 1.65;
+  --leading-mono: 1.5;
+
+  /* Tracking */
+  --tracking-hero: -0.03em;
+  --tracking-label: 0.1em;
+
+  /* Spacing (4px base, §2.4) */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-24: 6rem;
+  --space-32: 8rem;
+  --space-48: 12rem;
+
+  /* Containers */
+  --width-reading: 68ch;
+  --width-standard: 1200px;
+  --width-wide: 1440px;
+
+  /* Motion (§2.5) */
+  --ease-editorial: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-default: 600ms;
+}
+
+/* Light mode inversion (§2.2). */
+.light,
+:root[data-theme="light"] {
+  --surface: var(--paper-50);
+  --surface-raised: #EDE7DA;
+  --surface-elevated: #E2DBCB;
+  --border: #C9C1B0;
+  --text: var(--ink-900);
+  --text-muted: var(--ink-700);
+  --text-faint: #5C5A52;
+  /* Accent holds (#3E8B87 works on both). Signal darkens for contrast. */
+  --signal: #1E8C6E;
+}
+
+/* -----------------------------------------------------------------------------
+ * Tailwind v4 theme binding — expose tokens as utility-ready variables.
+ * ---------------------------------------------------------------------------*/
+@theme inline {
+  --color-ink-900: var(--ink-900);
+  --color-ink-800: var(--ink-800);
+  --color-ink-700: var(--ink-700);
+  --color-ink-600: var(--ink-600);
+  --color-paper-50: var(--paper-50);
+  --color-paper-200: var(--paper-200);
+  --color-paper-400: var(--paper-400);
+  --color-accent-500: var(--accent-500);
+  --color-accent-400: var(--accent-400);
+  --color-accent-900: var(--accent-900);
+  --color-signal-400: var(--signal-400);
+  --color-success-500: var(--success-500);
+  --color-warning-500: var(--warning-500);
+  --color-danger-500: var(--danger-500);
+
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-text-faint: var(--text-faint);
+  --color-accent: var(--accent);
+  --color-signal: var(--signal);
+
+  --font-display: var(--font-display);
+  --font-sans: var(--font-body);
+  --font-mono: var(--font-mono);
+}
+
+/* -----------------------------------------------------------------------------
+ * Base layer
+ * ---------------------------------------------------------------------------*/
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  border-color: var(--border);
+}
+
+html {
+  color-scheme: dark;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+html.light {
+  color-scheme: light;
+}
+
+body {
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  font-feature-settings: "cv11", "ss01";
+  transition:
+    background-color var(--duration-default) var(--ease-editorial),
+    color var(--duration-default) var(--ease-editorial);
+}
+
+::selection {
+  background: var(--accent-500);
+  color: var(--paper-50);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent-500);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* Editorial display typography defaults. */
+.font-display,
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-feature-settings: "ss01", "ss02";
+}
+
+/* Respect reduced motion — seed §2.5 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
