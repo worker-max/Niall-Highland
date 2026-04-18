@@ -1,49 +1,42 @@
-import type { Metadata } from "next";
-import { ClerkProvider } from "@clerk/nextjs";
-import "./globals.css";
-
-// On Vercel, swap this back to next/font/google Inter for optimal loading:
-//   import { Inter } from "next/font/google";
-//   const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-//   Then add className={inter.variable} to <html>.
-// Using system font stack here for zero-dependency local builds.
+import type { Metadata, Viewport } from "next";
+import type { ReactNode } from "react";
+import { Providers } from "./providers";
+import { fontVariables } from "@/lib/fonts";
+import "../styles/globals.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://homehealthtools.com"),
   title: {
-    default: "HomeHealthTools — Workforce & Territory Tools for Home Health Branch Directors",
-    template: "%s | HomeHealthTools",
+    default: "Niall Highland — AI strategy for international schools",
+    template: "%s · Niall Highland",
   },
   description:
-    "Independent SaaS for home health branch directors: heat-map your admissions, build equitable territories, manage PTO against school calendars, and run on-call coverage without the whiteboard.",
-  keywords: [
-    "home health",
-    "branch director",
-    "territory management",
-    "PTO scheduler",
-    "on-call coverage",
-    "admissions heat map",
-  ],
+    "Teachers aren't being replaced by AI. They're being replaced by teachers who use it. Niall Highland helps international schools build AI fluency across faculty, curriculum, and leadership.",
+  metadataBase: new URL("https://niallhighland.com"),
   openGraph: {
-    title: "HomeHealthTools",
+    title: "Niall Highland — AI strategy for international schools",
     description:
-      "Tools that should have existed years ago for home health branch directors. No PHI. No fluff.",
-    url: "https://homehealthtools.com",
-    siteName: "HomeHealthTools",
+      "Teachers aren't being replaced by AI. They're being replaced by teachers who use it.",
+    url: "https://niallhighland.com",
+    siteName: "Niall Highland",
+    locale: "en_GB",
     type: "website",
   },
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#0B0D0E" },
+    { media: "(prefers-color-scheme: light)", color: "#F4EFE7" },
+  ],
+  colorScheme: "dark light",
+};
+
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <ClerkProvider>
-      <html lang="en">
-        <body className="min-h-screen font-sans antialiased">{children}</body>
-      </html>
-    </ClerkProvider>
+    <html lang="en" suppressHydrationWarning className={fontVariables}>
+      <body>
+        <Providers>{children}</Providers>
+      </body>
+    </html>
   );
 }

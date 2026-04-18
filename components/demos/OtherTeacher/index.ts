@@ -1,0 +1,1 @@
+export { OtherTeacher } from "./OtherTeacher";

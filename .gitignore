@@ -4,23 +4,22 @@ node_modules
 .pnp.js
 
 # testing
-/coverage
-!/app/coverage
-!/app/dashboard/coverage
-!/app/api/coverage
+coverage
 
 # next.js
 .next/
 out/
-next-env.d.ts
-
-# production
 build
 dist
+
+# production
+*.log
 
 # misc
 .DS_Store
 *.pem
+.idea
+.vscode
 
 # debug
 npm-debug.log*
@@ -28,24 +27,12 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# local env files
+# env
 .env
 .env*.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# vercel
-.vercel
-
-# prisma
-prisma/migrations/dev.db*
 
 # typescript
 *.tsbuildinfo
-.next/
-node_modules/
 
-# niall-highland-site lives in its own repo (worker-max/Niall-Highland);
-# kept locally for convenience but not tracked here.
-niall-highland-site/
+# vercel
+.vercel
