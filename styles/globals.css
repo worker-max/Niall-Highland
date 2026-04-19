@@ -213,6 +213,43 @@ h4 {
   font-feature-settings: "ss01", "ss02";
 }
 
+/* -----------------------------------------------------------------------------
+ * Custom icon family — circuit-trace visual language (see components/icons/).
+ * ---------------------------------------------------------------------------*/
+
+/* Slow node pulse on SVGs marked data-active="true". Only elements with
+ * class "icon-pulse" animate so the designer can pick one node per icon. */
+@keyframes icon-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+@keyframes icon-trace {
+  0% { stroke-dashoffset: 100; }
+  100% { stroke-dashoffset: 0; }
+}
+
+svg[data-active="true"] .icon-pulse {
+  animation: icon-pulse 2.4s var(--ease-editorial) infinite;
+  transform-origin: center;
+}
+svg[data-active="true"] .icon-trace {
+  stroke-dasharray: 4 3;
+  animation: icon-trace 4s linear infinite;
+}
+
+/* The "hot" signal node: accent-colored so it reads even in black-stroke contexts. */
+.icon-hot {
+  fill: var(--accent);
+  stroke: var(--accent);
+}
+.icon-signal {
+  stroke: var(--signal);
+}
+.icon-dashed {
+  stroke-dasharray: 3 3;
+  opacity: 0.55;
+}
+
 /* Respect reduced motion — seed §2.5 */
 @media (prefers-reduced-motion: reduce) {
   *,

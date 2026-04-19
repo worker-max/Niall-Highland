@@ -17,6 +17,8 @@ interface EngagementCardProps {
   cta: string;
   /** `anchor` tier gets the signal border + heavier card weight. */
   emphasis?: Emphasis;
+  /** Optional tier icon rendered in the header (anchor / bolt / podium). */
+  icon?: ReactNode;
   className?: string;
 }
 
@@ -35,6 +37,7 @@ export function EngagementCard({
   href,
   cta,
   emphasis = "standard",
+  icon,
   className,
 }: EngagementCardProps) {
   const anchor = emphasis === "anchor";
@@ -64,7 +67,18 @@ export function EngagementCard({
         </span>
       </header>
 
-      <h3 className="mt-[var(--space-4)] font-display text-[length:var(--text-h2)] leading-[1.1] tracking-[-0.02em] text-[color:var(--text)] [text-wrap:balance]">
+      {icon ? (
+        <div className="mt-[var(--space-6)] text-[color:var(--accent)]" data-active="true">
+          {icon}
+        </div>
+      ) : null}
+
+      <h3
+        className={cn(
+          "font-display text-[length:var(--text-h2)] leading-[1.1] tracking-[-0.02em] text-[color:var(--text)] [text-wrap:balance]",
+          icon ? "mt-[var(--space-4)]" : "mt-[var(--space-4)]",
+        )}
+      >
         {title}
       </h3>
 

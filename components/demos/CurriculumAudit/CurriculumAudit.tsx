@@ -1,9 +1,14 @@
 "use client";
 
-import { useCallback, useRef, useState, type FormEvent } from "react";
+import { useCallback, useRef, useState, type FormEvent, type ReactElement } from "react";
 import { cn } from "@/lib/cn";
 import { DemoShell } from "@/components/primitives/DemoShell";
 import { track } from "@/lib/analytics";
+import {
+  AIProofIcon,
+  AIVulnerableIcon,
+  AIAmplifiedIcon,
+} from "@/components/icons";
 import type { CurriculumAudit } from "@/lib/ai/schemas/curriculumAudit";
 
 type Status = "idle" | "streaming" | "done" | "errored";
@@ -225,6 +230,7 @@ export function CurriculumAudit() {
           label="AI-Proof"
           tone="success"
           tagline="Safe. Double down."
+          icon={<AIProofIcon size={40} />}
           items={(audit.aiProof ?? []).map((i) => ({
             heading: i?.outcome,
             body: i?.rationale,
@@ -235,6 +241,7 @@ export function CurriculumAudit() {
           label="AI-Vulnerable"
           tone="warning"
           tagline="Redesign, not remove."
+          icon={<AIVulnerableIcon size={40} />}
           items={(audit.aiVulnerable ?? []).map((i) => ({
             heading: i?.outcome,
             body: i?.rationale,
@@ -246,6 +253,7 @@ export function CurriculumAudit() {
           label="AI-Amplified"
           tone="signal"
           tagline="Opportunity, not threat."
+          icon={<AIAmplifiedIcon size={40} />}
           items={(audit.aiAmplified ?? []).map((i) => ({
             heading: i?.outcome,
             body: i?.rationale,
@@ -362,12 +370,14 @@ function AuditColumn({
   label,
   tone,
   tagline,
+  icon,
   items,
   placeholder,
 }: {
   label: string;
   tone: Tone;
   tagline: string;
+  icon?: ReactElement;
   items: ColumnItem[];
   placeholder: string;
 }) {
@@ -380,17 +390,26 @@ function AuditColumn({
       )}
     >
       <div className="border-b border-[color:var(--border)] px-[var(--space-4)] py-[var(--space-3)]">
-        <p
-          className={cn(
-            "font-mono text-[var(--text-caption)] uppercase tracking-[var(--tracking-label)]",
-            colors.label,
-          )}
-        >
-          {label}
-        </p>
-        <p className="mt-[var(--space-1)] text-[length:var(--text-caption)] text-[color:var(--text-faint)]">
-          {tagline}
-        </p>
+        <div className="flex items-start justify-between gap-[var(--space-3)]">
+          <div>
+            <p
+              className={cn(
+                "font-mono text-[var(--text-caption)] uppercase tracking-[var(--tracking-label)]",
+                colors.label,
+              )}
+            >
+              {label}
+            </p>
+            <p className="mt-[var(--space-1)] text-[length:var(--text-caption)] text-[color:var(--text-faint)]">
+              {tagline}
+            </p>
+          </div>
+          {icon ? (
+            <span className={cn("shrink-0", colors.label)} data-active="true">
+              {icon}
+            </span>
+          ) : null}
+        </div>
       </div>
       <div className="flex flex-col gap-[var(--space-4)] px-[var(--space-4)] py-[var(--space-4)]">
         {items.length === 0 ? (

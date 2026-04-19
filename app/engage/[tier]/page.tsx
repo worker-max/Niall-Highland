@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { EditorialSection } from "@/components/primitives/EditorialSection";
 import { ENGAGEMENT_TIERS, getTier } from "@/lib/engagement-tiers";
+import { tierIcon } from "@/lib/tier-icon";
 
 interface PageProps {
   params: Promise<{ tier: string }>;
@@ -37,9 +38,14 @@ export default async function EngagementTierPage({ params }: PageProps) {
         eyebrow={tier.tier}
         className="pt-[var(--space-32)]"
       >
-        <h1 className="font-display text-[length:var(--text-display)] leading-[var(--leading-display)] tracking-[-0.02em] [text-wrap:balance]">
-          {tier.title}
-        </h1>
+        <div className="grid gap-[var(--space-8)] md:grid-cols-[auto_1fr] md:items-start">
+          <div className="text-[color:var(--accent)]" data-active="true">
+            {tierIcon(tier.id, 96)}
+          </div>
+          <h1 className="font-display text-[length:var(--text-display)] leading-[var(--leading-display)] tracking-[-0.02em] [text-wrap:balance]">
+            {tier.title}
+          </h1>
+        </div>
         <p className="mt-[var(--space-6)] font-mono text-[var(--text-caption)] uppercase tracking-[var(--tracking-label)] text-[color:var(--text-faint)]">
           {tier.duration}
         </p>

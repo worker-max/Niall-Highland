@@ -1,5 +1,6 @@
 import { EditorialSection } from "@/components/primitives/EditorialSection";
 import { CredentialChip } from "@/components/primitives/CredentialChip";
+import { TimelineIcon } from "@/components/icons";
 
 /**
  * \u00a74.3 \u2014 Track record. Vertical timeline of career nodes plus three
@@ -82,12 +83,19 @@ export function TrackRecord() {
       padding="spacious"
       eyebrow="Track record"
     >
-      <h2 className="font-display text-[length:var(--text-display)] leading-[var(--leading-display)] tracking-[-0.02em] [text-wrap:balance]">
-        Twenty years. Three continents.{" "}
-        <span className="text-[color:var(--accent)]">
-          One conviction that keeps proving itself.
-        </span>
-      </h2>
+      <div className="grid gap-[var(--space-8)] md:grid-cols-[auto_1fr] md:items-start">
+        <TimelineIcon
+          size={96}
+          active
+          className="text-[color:var(--accent)]"
+        />
+        <h2 className="font-display text-[length:var(--text-display)] leading-[var(--leading-display)] tracking-[-0.02em] [text-wrap:balance]">
+          Twenty years. Three continents.{" "}
+          <span className="text-[color:var(--accent)]">
+            One conviction that keeps proving itself.
+          </span>
+        </h2>
+      </div>
 
       <div className="mt-[var(--space-16)] grid gap-[var(--space-16)] lg:grid-cols-[2fr_3fr]">
         <ol className="flex flex-col gap-[var(--space-6)]">

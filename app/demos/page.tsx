@@ -1,6 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import type { ReactElement } from "react";
 import { EditorialSection } from "@/components/primitives/EditorialSection";
+import {
+  OtherTeacherIcon,
+  LessonPlanIcon,
+  CurriculumAuditIcon,
+  PrincipalsInboxIcon,
+  TalkExplorerIcon,
+} from "@/components/icons";
 
 export const metadata: Metadata = {
   title: "Demos",
@@ -14,15 +22,26 @@ export const metadata: Metadata = {
  * cards communicate "coming" rather than breaking the page.
  */
 
-const DEMOS = [
+interface DemoEntry {
+  id: string;
+  code: string;
+  title: string;
+  description: string;
+  status: "live" | "coming";
+  href: string;
+  icon: ReactElement;
+}
+
+const DEMOS: ReadonlyArray<DemoEntry> = [
   {
     id: "the-other-teacher",
     code: "P1",
     title: "The Other Teacher",
     description:
       "Dual-pane race. Same objective. Same five minutes. One teacher plans by hand, one teaches alongside AI. The difference, made visceral.",
-    status: "live" as const,
+    status: "live",
     href: "/#demo-the-other-teacher",
+    icon: <OtherTeacherIcon size={56} />,
   },
   {
     id: "lesson-plan-alchemist",
@@ -30,8 +49,9 @@ const DEMOS = [
     title: "Lesson Plan Alchemist",
     description:
       "Lowest-friction demo. Type what you\u2019re teaching next. Get a complete, printable IB-aligned lesson plan in about ten seconds.",
-    status: "live" as const,
+    status: "live",
     href: "/#demo-lesson-plan-alchemist",
+    icon: <LessonPlanIcon size={56} />,
   },
   {
     id: "curriculum-audit",
@@ -39,8 +59,9 @@ const DEMOS = [
     title: "Curriculum Audit",
     description:
       "Paste a unit plan. See which outcomes are AI-proof, which need redesign, and which could go further than you thought. A 30-second version of what I do in paid engagements.",
-    status: "live" as const,
+    status: "live",
     href: "/#demo-curriculum-audit",
+    icon: <CurriculumAuditIcon size={56} />,
   },
   {
     id: "principals-inbox",
@@ -48,8 +69,9 @@ const DEMOS = [
     title: "The Principal\u2019s Inbox",
     description:
       "Realistic AI-policy dilemmas, framed the way they actually hit a head\u2019s desk. Three response options \u2014 policing, permissive, and the third one.",
-    status: "coming" as const,
+    status: "coming",
     href: "#",
+    icon: <PrincipalsInboxIcon size={56} />,
   },
   {
     id: "talk-explorer",
@@ -57,8 +79,9 @@ const DEMOS = [
     title: "Conference Talk Explorer",
     description:
       "RAG over every talk Niall has given since 2023. Ask the archive anything; get answers in Niall\u2019s voice, cited to the talk they came from.",
-    status: "coming" as const,
+    status: "coming",
     href: "/talks",
+    icon: <TalkExplorerIcon size={56} />,
   },
 ];
 
@@ -89,6 +112,7 @@ export default function DemosPage() {
               <Link
                 href={d.href}
                 className="group flex h-full flex-col gap-[var(--space-4)] rounded-[4px] border border-[color:var(--border)] bg-[color:var(--surface-raised)] p-[var(--space-8)] transition-colors hover:border-[color:var(--accent)]"
+                data-active={d.status === "live" ? "true" : undefined}
               >
                 <div className="flex items-center justify-between">
                   <span className="font-mono text-[var(--text-caption)] uppercase tracking-[var(--tracking-label)] text-[color:var(--accent)]">
@@ -105,6 +129,7 @@ export default function DemosPage() {
                     {d.status === "live" ? "Live" : "Coming"}
                   </span>
                 </div>
+                <div className="text-[color:var(--accent)]">{d.icon}</div>
                 <h2 className="font-display text-[length:var(--text-h2)] leading-[1.1] tracking-[-0.02em] text-[color:var(--text)] group-hover:text-[color:var(--accent)] transition-colors">
                   {d.title}
                 </h2>

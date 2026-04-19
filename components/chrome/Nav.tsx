@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/cn";
 import { ThemeToggle } from "@/components/chrome/ThemeToggle";
+import { NHMonogram } from "@/components/icons";
 
 /**
  * Primary nav per seed \u00a73.2. Wordmark ("Niall Highland" in Fraunces) is
@@ -65,9 +66,16 @@ export function Nav() {
       >
         <Link
           href="/"
-          className="font-display text-[1.125rem] tracking-[-0.02em] text-[color:var(--text)] hover:text-[color:var(--accent)] transition-colors"
+          className="group inline-flex items-center gap-[var(--space-3)] text-[color:var(--text)] hover:text-[color:var(--accent)] transition-colors"
+          aria-label="Niall Highland \u2014 home"
         >
-          Niall Highland
+          <NHMonogram
+            size={28}
+            className="text-[color:var(--accent)] transition-transform duration-[var(--duration-default)] ease-[var(--ease-editorial)] group-hover:translate-x-[1px]"
+          />
+          <span className="font-display text-[1.125rem] tracking-[-0.02em]">
+            Niall Highland
+          </span>
         </Link>
 
         <ul className="hidden items-center gap-[var(--space-8)] md:flex">

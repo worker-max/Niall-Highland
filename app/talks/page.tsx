@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { EditorialSection } from "@/components/primitives/EditorialSection";
+import { TalkExplorerIcon } from "@/components/icons";
 
 export const metadata: Metadata = {
   title: "Talks",
@@ -22,12 +23,15 @@ export default function TalksPage() {
         eyebrow="Talks"
         className="pt-[var(--space-32)]"
       >
-        <h1 className="font-display text-[length:var(--text-display)] leading-[var(--leading-display)] tracking-[-0.02em] [text-wrap:balance]">
-          Three years.{" "}
-          <span className="text-[color:var(--accent)]">
-            A consistent message to European educators: stop flinching.
-          </span>
-        </h1>
+        <div className="grid gap-[var(--space-8)] md:grid-cols-[auto_1fr] md:items-start">
+          <TalkExplorerIcon size={96} active className="text-[color:var(--accent)]" />
+          <h1 className="font-display text-[length:var(--text-display)] leading-[var(--leading-display)] tracking-[-0.02em] [text-wrap:balance]">
+            Three years.{" "}
+            <span className="text-[color:var(--accent)]">
+              A consistent message to European educators: stop flinching.
+            </span>
+          </h1>
+        </div>
         <p className="mt-[var(--space-6)] max-w-[var(--width-reading)] text-[length:var(--text-lead)] leading-[var(--leading-body)] text-[color:var(--text-muted)]">
           The talk archive lands in Phase 5, with transcripts, video, and a
           retrieval-augmented explorer that lets you ask the full archive any

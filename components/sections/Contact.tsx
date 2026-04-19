@@ -6,6 +6,7 @@ import { z } from "zod";
 import { useState } from "react";
 import { cn } from "@/lib/cn";
 import { EditorialSection } from "@/components/primitives/EditorialSection";
+import { ContactIcon } from "@/components/icons";
 
 /**
  * \u00a74.6 \u2014 Contact form. Client-validated via Zod + react-hook-form,
@@ -96,6 +97,9 @@ export function Contact({ email, calendlyUrl, linkedInUrl }: ContactProps) {
     >
       <div className="grid gap-[var(--space-16)] lg:grid-cols-[3fr_2fr]">
         <div>
+          <div className="mb-[var(--space-6)] text-[color:var(--accent)]">
+            <ContactIcon size={72} active />
+          </div>
           <h2 className="font-display text-[length:var(--text-display)] leading-[var(--leading-display)] tracking-[-0.02em] [text-wrap:balance]">
             If you read this far,{" "}
             <span className="text-[color:var(--accent)]">

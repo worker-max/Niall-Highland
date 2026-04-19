@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { EditorialSection } from "@/components/primitives/EditorialSection";
+import { FluencyIcon } from "@/components/icons";
 
 /**
  * \u00a74.2 \u2014 What Niall does. Three-column explainer positioned between
@@ -37,10 +38,19 @@ export function WhatNiallDoes() {
       padding="spacious"
       eyebrow="What I do"
     >
-      <h2 className="font-display text-[length:var(--text-display)] leading-[var(--leading-display)] tracking-[-0.02em] [text-wrap:balance]">
-        I don&rsquo;t run AI workshops.{" "}
-        <span className="text-[color:var(--accent)]">I embed AI fluency.</span>
-      </h2>
+      <div className="grid gap-[var(--space-8)] md:grid-cols-[auto_1fr] md:items-start">
+        <FluencyIcon
+          size={96}
+          active
+          className="text-[color:var(--accent)]"
+        />
+        <h2 className="font-display text-[length:var(--text-display)] leading-[var(--leading-display)] tracking-[-0.02em] [text-wrap:balance]">
+          I don&rsquo;t run AI workshops.{" "}
+          <span className="text-[color:var(--accent)]">
+            I embed AI fluency.
+          </span>
+        </h2>
+      </div>
       <p className="mt-[var(--space-6)] max-w-[var(--width-reading)] text-[length:var(--text-lead)] leading-[var(--leading-body)] text-[color:var(--text-muted)]">
         The difference matters. A workshop ends. Fluency compounds.
       </p>

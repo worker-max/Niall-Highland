@@ -8,6 +8,11 @@ import { WhatNiallDoes } from "@/components/sections/WhatNiallDoes";
 import { TrackRecord } from "@/components/sections/TrackRecord";
 import { Engage } from "@/components/sections/Engage";
 import { ContactLazy } from "@/components/sections/ContactLazy";
+import {
+  GapIcon,
+  LessonPlanIcon,
+  CurriculumAuditIcon,
+} from "@/components/icons";
 
 /**
  * Home page. Phase 3 flow (seed \u00a73.1 / \u00a77):
@@ -24,6 +29,9 @@ export default function HomePage() {
         eyebrow="AI strategy for international schools"
         className="flex min-h-[90vh] flex-col justify-center pt-[var(--space-24)]"
       >
+        <div className="mb-[var(--space-8)] text-[color:var(--accent)]">
+          <GapIcon size={112} active />
+        </div>
         <ThesisBlock
           lines={[
             "Teachers aren\u2019t being replaced",
@@ -91,22 +99,36 @@ export default function HomePage() {
       <WhatNiallDoes />
 
       <EditorialSection container="wide" padding="default" eyebrow="Demo \u00b7 02">
-        <h2
-          id="demo-lesson-plan-alchemist"
-          className="mb-[var(--space-6)] font-display text-[length:var(--text-display)] leading-[var(--leading-display)] tracking-[-0.02em] [text-wrap:balance]"
-        >
-          What are you teaching next?
-        </h2>
+        <div className="mb-[var(--space-6)] grid gap-[var(--space-6)] md:grid-cols-[auto_1fr] md:items-start">
+          <LessonPlanIcon
+            size={80}
+            active
+            className="text-[color:var(--accent)]"
+          />
+          <h2
+            id="demo-lesson-plan-alchemist"
+            className="font-display text-[length:var(--text-display)] leading-[var(--leading-display)] tracking-[-0.02em] [text-wrap:balance]"
+          >
+            What are you teaching next?
+          </h2>
+        </div>
         <LessonPlanAlchemist />
       </EditorialSection>
 
       <EditorialSection container="wide" padding="default" eyebrow="Demo \u00b7 03">
-        <h2
-          id="demo-curriculum-audit"
-          className="mb-[var(--space-4)] font-display text-[length:var(--text-display)] leading-[var(--leading-display)] tracking-[-0.02em] [text-wrap:balance]"
-        >
-          Audit a unit against an AI-capable class.
-        </h2>
+        <div className="mb-[var(--space-4)] grid gap-[var(--space-6)] md:grid-cols-[auto_1fr] md:items-start">
+          <CurriculumAuditIcon
+            size={80}
+            active
+            className="text-[color:var(--accent)]"
+          />
+          <h2
+            id="demo-curriculum-audit"
+            className="font-display text-[length:var(--text-display)] leading-[var(--leading-display)] tracking-[-0.02em] [text-wrap:balance]"
+          >
+            Audit a unit against an AI-capable class.
+          </h2>
+        </div>
         <p className="mb-[var(--space-8)] max-w-[var(--width-reading)] text-[length:var(--text-lead)] leading-[var(--leading-body)] text-[color:var(--text-muted)]">
           A 30-second version of what I do inside paid engagements. Paste what
           you&rsquo;re currently teaching. See which outcomes are safe, which

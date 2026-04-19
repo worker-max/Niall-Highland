@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { EditorialSection } from "@/components/primitives/EditorialSection";
 import { EngagementCard } from "@/components/primitives/EngagementCard";
 import { ENGAGEMENT_TIERS } from "@/lib/engagement-tiers";
+import { tierIcon } from "@/lib/tier-icon";
 
 export const metadata: Metadata = {
   title: "Engage",
@@ -47,6 +48,7 @@ export default function EngagePage() {
               href={`/engage/${t.id}`}
               cta="See engagement detail"
               emphasis={i === 0 ? "anchor" : "standard"}
+              icon={tierIcon(t.id)}
             />
           ))}
         </div>
