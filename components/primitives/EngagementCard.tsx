@@ -41,6 +41,10 @@ export function EngagementCard({
 
   return (
     <article
+      // Anchor card sits on a permanently dark --accent-900 bg. data-surface
+      // rebinds semantic text tokens to paper tones so interior copy stays
+      // readable in light mode. See [data-surface="dark"] in globals.css.
+      data-surface={anchor ? "dark" : undefined}
       className={cn(
         "flex h-full flex-col rounded-[4px] border p-[var(--space-8)]",
         anchor

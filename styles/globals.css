@@ -2,18 +2,19 @@
 
 /* -----------------------------------------------------------------------------
  * Design tokens — seed §2.2, §2.3, §2.4, §2.5
- * Dark-mode-first. Light mode inverts surface + text; accent/signal tuned.
+ * Light-mode default (owner directive). Dark mode remains a first-class
+ * option: .dark class overrides semantic aliases to ink/paper dark tones.
  * Critical: never pure white or pure black. Editorial warmth matters.
  * ---------------------------------------------------------------------------*/
 
 :root {
-  /* Surfaces — editorial dark (default) */
+  /* Surfaces (raw scale — both themes reference these) */
   --ink-900: #0B0D0E;
   --ink-800: #131619;
   --ink-700: #1C2024;
   --ink-600: #2A2F35;
 
-  /* Text */
+  /* Paper (raw scale) */
   --paper-50: #F4EFE7;
   --paper-200: #D9D2C5;
   --paper-400: #8F887C;
@@ -32,17 +33,18 @@
   --warning-500: #D4A853;
   --danger-500: #C55353;
 
-  /* Semantic role aliases — reference these in components, not raw scale values. */
-  --surface: var(--ink-900);
-  --surface-raised: var(--ink-800);
-  --surface-elevated: var(--ink-700);
-  --border: var(--ink-600);
-  --text: var(--paper-50);
-  --text-muted: var(--paper-200);
-  --text-faint: var(--paper-400);
+  /* Semantic role aliases — LIGHT mode default.
+   * Reference these in components, not raw scale values. */
+  --surface: var(--paper-50);
+  --surface-raised: #EDE7DA;
+  --surface-elevated: #E2DBCB;
+  --border: #C9C1B0;
+  --text: var(--ink-900);
+  --text-muted: var(--ink-700);
+  --text-faint: #5C5A52;
   --accent: var(--accent-500);
   --accent-hover: var(--accent-400);
-  --signal: var(--signal-400);
+  --signal: #1E8C6E;
 
   /* Typography — self-hosted via next/font (see app/layout.tsx). */
   --font-display: var(--font-fraunces), "GT Sectra", "Tiempos Headline", Georgia, serif;
@@ -92,18 +94,35 @@
   --duration-default: 600ms;
 }
 
-/* Light mode inversion (§2.2). */
-.light,
-:root[data-theme="light"] {
-  --surface: var(--paper-50);
-  --surface-raised: #EDE7DA;
-  --surface-elevated: #E2DBCB;
-  --border: #C9C1B0;
-  --text: var(--ink-900);
-  --text-muted: var(--ink-700);
-  --text-faint: #5C5A52;
-  /* Accent holds (#3E8B87 works on both). Signal darkens for contrast. */
-  --signal: #1E8C6E;
+/* Dark mode override (§2.2). Accent holds — #3E8B87 works on both. */
+.dark,
+:root[data-theme="dark"] {
+  --surface: var(--ink-900);
+  --surface-raised: var(--ink-800);
+  --surface-elevated: var(--ink-700);
+  --border: var(--ink-600);
+  --text: var(--paper-50);
+  --text-muted: var(--paper-200);
+  --text-faint: var(--paper-400);
+  --signal: var(--signal-400);
+}
+
+/* Dark-surface island.
+ * Any element carrying data-surface="dark" (and its subtree) uses dark-mode
+ * token values regardless of the page-level theme. This is the pattern for
+ * components that are always visually "dark" — the AI-Native Studio demo
+ * shells (seed §2.1) and the anchor engagement card sitting on --accent-900.
+ * Without this, light mode would render dark text on dark backgrounds. */
+[data-surface="dark"] {
+  --surface: var(--ink-900);
+  --surface-raised: var(--ink-800);
+  --surface-elevated: var(--ink-700);
+  --border: var(--ink-600);
+  --text: var(--paper-50);
+  --text-muted: var(--paper-200);
+  --text-faint: var(--paper-400);
+  --signal: #7FE3C7;
+  color-scheme: dark;
 }
 
 /* -----------------------------------------------------------------------------
@@ -151,14 +170,14 @@
 }
 
 html {
-  color-scheme: dark;
+  color-scheme: light;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
 
-html.light {
-  color-scheme: light;
+html.dark {
+  color-scheme: dark;
 }
 
 body {

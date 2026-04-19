@@ -45,6 +45,10 @@ export function DemoShell({
   return (
     <div
       id={id}
+      // ai-native demos are visually always-dark per seed \u00a72.1 ("terminal-
+      // style output windows"). data-surface rebinds semantic tokens so the
+      // shell stays dark even when the page is in light mode.
+      data-surface={aiNative ? "dark" : undefined}
       className={cn(
         "relative overflow-hidden rounded-[4px]",
         "border border-[color:var(--border)] bg-[color:var(--surface-raised)]",

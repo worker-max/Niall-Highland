@@ -295,7 +295,10 @@ export function CurriculumAudit() {
       ) : null}
 
       {done && !error ? (
-        <div className="mt-[var(--space-8)] rounded-[2px] border border-[color:var(--accent)] bg-[color:var(--accent-900)] p-[var(--space-6)]">
+        <div
+          data-surface="dark"
+          className="mt-[var(--space-8)] rounded-[2px] border border-[color:var(--accent)] bg-[color:var(--accent-900)] p-[var(--space-6)]"
+        >
           <p className="text-[length:var(--text-body)] text-[color:var(--text)]">
             This is the 30-second version. For your full K&ndash;12 curriculum,
             with department-by-department recommendations and a 12-month

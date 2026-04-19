@@ -301,7 +301,10 @@ export function OtherTeacher() {
       ) : null}
 
       {finished && !race.error ? (
-        <div className="mt-[var(--space-8)] rounded-[2px] border border-[color:var(--accent)] bg-[color:var(--accent-900)] p-[var(--space-6)]">
+        <div
+          data-surface="dark"
+          className="mt-[var(--space-8)] rounded-[2px] border border-[color:var(--accent)] bg-[color:var(--accent-900)] p-[var(--space-6)]"
+        >
           <p className="font-mono text-[var(--text-caption)] uppercase tracking-[var(--tracking-label)] text-[color:var(--signal)]">
             What Teacher B did with the other{" "}
             {Math.max(0, 5 - Math.ceil(race.elapsed / 60))} minutes

@@ -4,15 +4,16 @@ import { ThemeProvider } from "next-themes";
 import type { ReactNode } from "react";
 
 /**
- * Dark-mode-first (seed §2.2). Toggle exposed in chrome; stored in
- * localStorage by next-themes. `attribute="class"` writes .dark / .light on
- * <html>, which our CSS uses to flip semantic role aliases.
+ * Light-mode default (owner directive, supersedes seed §2.2 default). Dark
+ * mode remains a first-class option via the toggle in chrome; design tokens
+ * are designed to invert cleanly. `attribute="class"` writes .dark / .light
+ * on <html>, which our CSS uses to flip semantic role aliases.
  */
 export function Providers({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider
       attribute="class"
-      defaultTheme="dark"
+      defaultTheme="light"
       enableSystem={false}
       disableTransitionOnChange={false}
     >
