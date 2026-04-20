@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import { EditorialSection } from "@/components/primitives/EditorialSection";
+import { BusinessCard } from "@/components/primitives/BusinessCard";
 import {
   GapIcon,
   FluencyIcon,
@@ -138,32 +139,142 @@ export default function IconsShowcasePage() {
         );
       })}
 
-      {/* Contrast / surface tests */}
-      <EditorialSection container="wide" padding="default" eyebrow="Surface tests">
-        <div className="grid gap-[var(--space-6)] md:grid-cols-3">
-          <div className="rounded-[4px] border border-[color:var(--border)] bg-[color:var(--surface-raised)] p-[var(--space-8)] text-center">
-            <p className="mb-[var(--space-4)] font-mono text-[var(--text-caption)] uppercase tracking-[var(--tracking-label)] text-[color:var(--text-faint)]">
-              Default surface
-            </p>
-            <GapIcon size={96} active className="text-[color:var(--accent)]" />
-          </div>
-          <div
-            data-surface="dark"
-            className="rounded-[4px] border border-[color:var(--accent)] bg-[color:var(--accent-900)] p-[var(--space-8)] text-center"
-          >
-            <p className="mb-[var(--space-4)] font-mono text-[var(--text-caption)] uppercase tracking-[var(--tracking-label)] text-[color:var(--signal)]">
-              Dark island
-            </p>
-            <GapIcon size={96} active className="text-[color:var(--signal)]" />
-          </div>
-          <div className="rounded-[4px] border border-[color:var(--accent)] bg-[color:var(--accent)] p-[var(--space-8)] text-center text-[color:var(--paper-50)]">
-            <p className="mb-[var(--space-4)] font-mono text-[var(--text-caption)] uppercase tracking-[var(--tracking-label)] opacity-70">
-              On accent
-            </p>
-            <GapIcon size={96} active />
-          </div>
+      {/* One icon across six surfaces — stress test the visual language. */}
+      <EditorialSection container="wide" padding="default" eyebrow="Across surfaces">
+        <p className="mb-[var(--space-8)] max-w-[var(--width-reading)] text-[length:var(--text-body)] text-[color:var(--text-muted)]">
+          The same icon (<code className="font-mono text-[var(--text-small)]">FluencyIcon</code>)
+          rendered on six different background treatments. Because stroke
+          inherits <code className="font-mono text-[var(--text-small)]">currentColor</code>,
+          each surface defines the icon&rsquo;s palette without touching the icon code.
+        </p>
+        <div className="grid gap-[var(--space-4)] sm:grid-cols-2 lg:grid-cols-3">
+          <SurfaceTile label="Paper (default)" bg="bg-[color:var(--paper-50)]" fg="text-[color:var(--accent-500)]" border="border-[#C9C1B0]">
+            <FluencyIcon size={96} active />
+          </SurfaceTile>
+          <SurfaceTile label="Paper raised" bg="bg-[#EDE7DA]" fg="text-[color:var(--ink-900)]" border="border-[#C9C1B0]">
+            <FluencyIcon size={96} active />
+          </SurfaceTile>
+          <SurfaceTile label="Ink 900" bg="bg-[color:var(--ink-900)]" fg="text-[color:var(--paper-50)]" border="border-[color:var(--ink-600)]" dark>
+            <FluencyIcon size={96} active />
+          </SurfaceTile>
+          <SurfaceTile label="Ink raised" bg="bg-[color:var(--ink-800)]" fg="text-[color:var(--signal-400)]" border="border-[color:var(--ink-600)]" dark>
+            <FluencyIcon size={96} active />
+          </SurfaceTile>
+          <SurfaceTile label="Accent fill" bg="bg-[color:var(--accent-500)]" fg="text-[color:var(--paper-50)]" border="border-[color:var(--accent-500)]" dark>
+            <FluencyIcon size={96} active />
+          </SurfaceTile>
+          <SurfaceTile label="Accent deep" bg="bg-[color:var(--accent-900)]" fg="text-[color:var(--signal-400)]" border="border-[color:var(--accent-500)]" dark>
+            <FluencyIcon size={96} active />
+          </SurfaceTile>
+        </div>
+      </EditorialSection>
+
+      {/* Business cards — production-adjacent preview of the icon family at work. */}
+      <EditorialSection container="wide" padding="spacious" eyebrow="Business cards">
+        <div className="mb-[var(--space-12)] grid gap-[var(--space-4)] md:grid-cols-[auto_1fr] md:items-start">
+          <h2 className="font-display text-[length:var(--text-h1)] leading-[1.1] tracking-[-0.02em] [text-wrap:balance]">
+            Six cards, six roles, one family.
+          </h2>
+          <p className="max-w-[var(--width-reading)] text-[length:var(--text-body)] leading-[var(--leading-body)] text-[color:var(--text-muted)]">
+            A practical stress-test of the icon language. Each card pairs a
+            different icon with a different surface and tells you, in one
+            glance, which version of Niall you&rsquo;re talking to \u2014 the
+            principal, the consultant, the keynote speaker, the demo-builder.
+          </p>
+        </div>
+
+        <div className="grid gap-[var(--space-6)] md:grid-cols-2 xl:grid-cols-3">
+          <BusinessCard
+            surface="ink"
+            icon={<GapIcon size={160} active />}
+            eyebrow="AI strategy \u00b7 International schools"
+            title="Niall Highland"
+            role="Associate Principal \u00b7 International School of Krakow"
+            contacts={[
+              "niallhighland.com",
+              "hello@niallhighland.com",
+              "in/niall-highland",
+            ]}
+          />
+          <BusinessCard
+            surface="paper"
+            icon={<FluencyIcon size={160} active />}
+            eyebrow="Faculty fluency programs"
+            title="Niall Highland"
+            role="Consultant \u2014 AI in international schools"
+            contacts={[
+              "niallhighland.com",
+              "hello@niallhighland.com",
+            ]}
+          />
+          <BusinessCard
+            surface="accent"
+            icon={<KeynoteTierIcon size={160} />}
+            eyebrow="Keynotes \u00b7 INSET \u00b7 Board sessions"
+            title="On AI, teaching, and the job we\u2019re actually doing now"
+            role="Niall Highland"
+            contacts={[
+              "niallhighland.com/engage/keynote",
+              "hello@niallhighland.com",
+            ]}
+            layout="demo"
+          />
+          <BusinessCard
+            surface="accentDark"
+            icon={<OtherTeacherIcon size={160} active />}
+            eyebrow="Live demo"
+            title="Plan a lesson alongside AI"
+            role="The Other Teacher \u00b7 five minutes, side by side"
+            contacts={["niallhighland.com/#demo-the-other-teacher"]}
+            layout="demo"
+          />
+          <BusinessCard
+            surface="raised"
+            icon={<AnchorTierIcon size={160} />}
+            eyebrow="School-wide partnership"
+            title="Six to eighteen months. One integrated program."
+            role="Niall Highland \u00b7 niallhighland.com/engage/partnership"
+            layout="split"
+          />
+          <BusinessCard
+            surface="ink"
+            icon={<AIAmplifiedIcon size={160} />}
+            eyebrow="Curriculum audit"
+            title="Teachers aren\u2019t being replaced by AI."
+            role="They\u2019re being replaced by teachers who use it."
+            contacts={["niallhighland.com/#demo-curriculum-audit"]}
+            layout="split"
+          />
         </div>
       </EditorialSection>
     </>
+  );
+}
+
+function SurfaceTile({
+  label,
+  bg,
+  fg,
+  border,
+  dark,
+  children,
+}: {
+  label: string;
+  bg: string;
+  fg: string;
+  border: string;
+  dark?: boolean;
+  children: ReactElement;
+}) {
+  return (
+    <div
+      data-surface={dark ? "dark" : undefined}
+      className={`flex flex-col gap-[var(--space-4)] rounded-[4px] border ${bg} ${border} p-[var(--space-8)]`}
+    >
+      <span className="font-mono text-[0.625rem] uppercase tracking-[0.2em] text-[color:var(--text-faint)]">
+        {label}
+      </span>
+      <div className={`flex justify-center ${fg}`}>{children}</div>
+    </div>
   );
 }
