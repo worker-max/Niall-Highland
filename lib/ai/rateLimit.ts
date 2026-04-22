@@ -60,6 +60,12 @@ export const curriculumAuditLimit = createLimiter(
   "1 h",
 );
 
+export const principalsInboxLimit = createLimiter(
+  "demo:principals-inbox",
+  10,
+  "1 h",
+);
+
 // Niall’s Desk passcode attempts. Tight ceiling so a leaked URL can’t be brute-forced.
 export const deskAuthLimit = createLimiter(
   "desk:auth",

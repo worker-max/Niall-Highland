@@ -12,13 +12,17 @@ import {
   GapIcon,
   LessonPlanIcon,
   CurriculumAuditIcon,
+  PrincipalsInboxIcon,
 } from "@/components/icons";
+import { PrincipalsInbox } from "@/components/demos/PrincipalsInbox";
 
 /**
- * Home page. Phase 3 flow (seed \u00a73.1 / \u00a77):
- *   Hero \u2192 P1 demo \u2192 What Niall Does \u2192 P2 demo \u2192 P3 demo \u2192
- *   Track Record \u2192 Pull Quote \u2192 Engage \u2192 Contact
- * P4 Principal\u2019s Inbox slots in after Track Record in Phase 4.
+ * Home page. Phase 4 flow (seed §3.1 / §7):
+ *   Hero → P1 → What Niall Does → P2 → P3 → Track Record →
+ *   Pull Quote (framework principle 03) → P4 Principal’s Inbox →
+ *   Engage → Contact
+ * P4 sits right after Track Record because readers at that scroll depth
+ * are leadership buyers; the positioning shift per seed Phase 4.
  */
 export default function HomePage() {
   return (
@@ -34,7 +38,7 @@ export default function HomePage() {
         </div>
         <ThesisBlock
           lines={[
-            "Teachers aren\u2019t being replaced",
+            "Teachers aren’t being replaced",
             <>
               by AI. They&rsquo;re being replaced{" "}
               <span className="text-[color:var(--accent)]">
@@ -98,7 +102,7 @@ export default function HomePage() {
 
       <WhatNiallDoes />
 
-      <EditorialSection container="wide" padding="default" eyebrow="Demo \u00b7 02">
+      <EditorialSection container="wide" padding="default" eyebrow="Demo · 02">
         <div className="mb-[var(--space-6)] grid gap-[var(--space-6)] md:grid-cols-[auto_1fr] md:items-start">
           <LessonPlanIcon
             size={80}
@@ -115,7 +119,7 @@ export default function HomePage() {
         <LessonPlanAlchemist />
       </EditorialSection>
 
-      <EditorialSection container="wide" padding="default" eyebrow="Demo \u00b7 03">
+      <EditorialSection container="wide" padding="default" eyebrow="Demo · 03">
         <div className="mb-[var(--space-4)] grid gap-[var(--space-6)] md:grid-cols-[auto_1fr] md:items-start">
           <CurriculumAuditIcon
             size={80}
@@ -139,15 +143,40 @@ export default function HomePage() {
 
       <TrackRecord />
 
+      {/* Leadership-angle pivot — principle 03 sets up the P4 demo.
+          The demo is the positioning shift per seed Phase 4: by this scroll
+          depth readers are leaders, not teachers. */}
       <EditorialSection container="reading" padding="default">
         <PullQuote
-          source="Seed document \u00b7 Part 1.2"
-          attribution="Positioning thesis"
+          source="Decision framework · Principle 03"
+          attribution="Niall Highland"
         >
-          The right question is no longer &ldquo;Should we allow AI?&rdquo;
-          The right question is &ldquo;Are our teachers fluent enough to
-          teach alongside it?&rdquo;
+          Policies written before teachers have used AI produce brittle
+          rules. Policies written after six months of faculty fluency produce
+          durable practice.
         </PullQuote>
+      </EditorialSection>
+
+      <EditorialSection container="wide" padding="default" eyebrow="Demo · 04">
+        <div className="mb-[var(--space-6)] grid gap-[var(--space-6)] md:grid-cols-[auto_1fr] md:items-start">
+          <PrincipalsInboxIcon
+            size={80}
+            active
+            className="text-[color:var(--accent)]"
+          />
+          <h2 className="font-display text-[length:var(--text-display)] leading-[var(--leading-display)] tracking-[-0.02em] [text-wrap:balance]">
+            The hardest decisions don&rsquo;t happen in a classroom.{" "}
+            <span className="text-[color:var(--accent)]">
+              They land in a principal&rsquo;s inbox.
+            </span>
+          </h2>
+        </div>
+        <p className="mb-[var(--space-8)] max-w-[var(--width-reading)] text-[length:var(--text-lead)] leading-[var(--leading-body)] text-[color:var(--text-muted)]">
+          Five realistic AI dilemmas. Three response paths leaders default
+          to. See which path the framework-led response takes &mdash; and
+          why the other two tend to produce worse outcomes.
+        </p>
+        <PrincipalsInbox />
       </EditorialSection>
 
       <Engage />

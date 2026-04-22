@@ -69,8 +69,8 @@ const DEMOS: ReadonlyArray<DemoEntry> = [
     title: "The Principal\u2019s Inbox",
     description:
       "Realistic AI-policy dilemmas, framed the way they actually hit a head\u2019s desk. Three response options \u2014 policing, permissive, and the third one.",
-    status: "coming",
-    href: "#",
+    status: "live",
+    href: "/#demo-principals-inbox",
     icon: <PrincipalsInboxIcon size={56} />,
   },
   {
