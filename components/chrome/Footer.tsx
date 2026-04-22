@@ -114,9 +114,17 @@ export function Footer({
           <p className="font-mono text-[var(--text-caption)] uppercase tracking-[var(--tracking-label)] text-[color:var(--text-faint)]">
             &copy; {new Date().getFullYear()} Niall Highland
           </p>
-          <p className="font-mono text-[var(--text-caption)] uppercase tracking-[var(--tracking-label)] text-[color:var(--text-faint)]">
-            Built with Claude. AI used visibly, not secretly.
-          </p>
+          <div className="flex items-center gap-[var(--space-6)]">
+            <Link
+              href="/desk"
+              className="font-mono text-[var(--text-caption)] uppercase tracking-[var(--tracking-label)] text-[color:var(--text-faint)] hover:text-[color:var(--accent)] transition-colors"
+            >
+              Niall&rsquo;s desk
+            </Link>
+            <p className="font-mono text-[var(--text-caption)] uppercase tracking-[var(--tracking-label)] text-[color:var(--text-faint)]">
+              Built with Claude. AI used visibly, not secretly.
+            </p>
+          </div>
         </div>
       </div>
     </footer>

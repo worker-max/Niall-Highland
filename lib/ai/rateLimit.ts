@@ -60,6 +60,20 @@ export const curriculumAuditLimit = createLimiter(
   "1 h",
 );
 
+// Niall’s Desk passcode attempts. Tight ceiling so a leaked URL can’t be brute-forced.
+export const deskAuthLimit = createLimiter(
+  "desk:auth",
+  8,
+  "10 m",
+);
+
+// Niall’s Desk submissions. Higher ceiling — generous for normal use.
+export const deskSubmitLimit = createLimiter(
+  "desk:submit",
+  30,
+  "1 h",
+);
+
 export function ipFromRequest(req: Request): string {
   return (
     req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??

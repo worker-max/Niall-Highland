@@ -6,6 +6,7 @@
 
 export { IconSvg, type IconProps } from "./IconSvg";
 export { NHMonogram } from "./monogram";
+export { DeskIcon } from "./desk";
 
 // Structural / section icons
 export {
