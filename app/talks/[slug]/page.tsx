@@ -6,6 +6,7 @@ import { EditorialSection } from "@/components/primitives/EditorialSection";
 import { PullQuote } from "@/components/primitives/PullQuote";
 import { CredentialChip } from "@/components/primitives/CredentialChip";
 import { getTalk, listTalkSlugs } from "@/lib/content";
+import { TalkJsonLd } from "@/lib/jsonld";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -64,6 +65,15 @@ export default async function TalkPage({ params }: PageProps) {
 
   return (
     <>
+      <TalkJsonLd
+        url={`https://niallhighland.com/talks/${talk.frontmatter.slug}`}
+        title={talk.frontmatter.title}
+        description={talk.frontmatter.abstract}
+        date={talk.frontmatter.date}
+        venue={talk.frontmatter.venue}
+        audience={talk.frontmatter.audience}
+        recordingUrl={talk.frontmatter.recordingUrl}
+      />
       <EditorialSection
         container="reading"
         padding="spacious"

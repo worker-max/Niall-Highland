@@ -5,6 +5,7 @@ import { MDXRemote } from "next-mdx-remote/rsc";
 import { EditorialSection } from "@/components/primitives/EditorialSection";
 import { PullQuote } from "@/components/primitives/PullQuote";
 import { getEssay, listEssaySlugs } from "@/lib/content";
+import { BlogPostingJsonLd } from "@/lib/jsonld";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -86,6 +87,13 @@ export default async function EssayPage({ params }: PageProps) {
 
   return (
     <>
+      <BlogPostingJsonLd
+        url={`https://niallhighland.com/writing/${essay.frontmatter.slug}`}
+        title={essay.frontmatter.title}
+        description={essay.frontmatter.excerpt}
+        datePublished={essay.frontmatter.date}
+        tags={essay.frontmatter.tags}
+      />
       <EditorialSection
         container="reading"
         padding="spacious"

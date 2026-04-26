@@ -4,6 +4,7 @@ import { Providers } from "./providers";
 import { Nav } from "@/components/chrome/Nav";
 import { Footer } from "@/components/chrome/Footer";
 import { AnalyticsInit } from "@/components/chrome/AnalyticsInit";
+import { PersonJsonLd } from "@/lib/jsonld";
 import { fontVariables } from "@/lib/fonts";
 import "../styles/globals.css";
 
@@ -40,6 +41,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body>
         <Providers>
           <AnalyticsInit />
+          <PersonJsonLd />
+          <a
+            href="#main"
+            className="sr-only focus:not-sr-only focus:fixed focus:left-[var(--space-4)] focus:top-[var(--space-4)] focus:z-50 focus:rounded-full focus:border focus:border-[color:var(--accent)] focus:bg-[color:var(--surface)] focus:px-[var(--space-4)] focus:py-[var(--space-2)] focus:font-mono focus:text-[var(--text-caption)] focus:uppercase focus:tracking-[var(--tracking-label)] focus:text-[color:var(--text)]"
+          >
+            Skip to content
+          </a>
           <Nav />
           <main id="main" className="relative">
             {children}

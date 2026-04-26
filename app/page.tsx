@@ -15,6 +15,7 @@ import {
   PrincipalsInboxIcon,
 } from "@/components/icons";
 import { PrincipalsInbox } from "@/components/demos/PrincipalsInbox";
+import { HeroBackground } from "@/components/generative/HeroBackground";
 
 /**
  * Home page. Phase 4 flow (seed §3.1 / §7):
@@ -31,8 +32,10 @@ export default function HomePage() {
         container="wide"
         padding="spacious"
         eyebrow="AI strategy for international schools"
-        className="flex min-h-[90vh] flex-col justify-center pt-[var(--space-24)]"
+        className="isolate flex min-h-[90vh] flex-col justify-center overflow-hidden pt-[var(--space-24)]"
       >
+        {/* Knowledge-graph particles, seed §2.7. Lives only in the hero. */}
+        <HeroBackground className="text-[color:var(--accent)]" />
         <div className="mb-[var(--space-8)] text-[color:var(--accent)]">
           <GapIcon size={112} active />
         </div>
