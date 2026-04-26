@@ -118,6 +118,18 @@ export function DeskClient() {
             Sign out
           </button>
         </div>
+
+        <div className="mt-[var(--space-8)] inline-flex items-center gap-[var(--space-3)] rounded-full border border-[color:var(--accent)] bg-[color:var(--accent-900)]/30 px-[var(--space-5)] py-[var(--space-2)]">
+          <span className="font-mono text-[var(--text-caption)] uppercase tracking-[var(--tracking-label)] text-[color:var(--accent)]">
+            Press kit
+          </span>
+          <a
+            href="/press-kit"
+            className="font-mono text-[var(--text-caption)] uppercase tracking-[var(--tracking-label)] text-[color:var(--text)] hover:text-[color:var(--signal)]"
+          >
+            Open the kit &rarr;
+          </a>
+        </div>
       </EditorialSection>
 
       <EditorialSection container="standard" padding="default" eyebrow="Whiteboard">
