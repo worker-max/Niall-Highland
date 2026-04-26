@@ -90,3 +90,69 @@ export async function listEssaySlugs(): Promise<string[]> {
   const essays = await listEssays();
   return essays.map((e) => e.frontmatter.slug);
 }
+
+/* -----------------------------------------------------------------------------
+ * Talks (seed §4.4 / §5.5). MDX bodies double as the transcript that the
+ * P5 RAG pipeline ingests. Frontmatter carries the metadata surfaced in
+ * /talks and used as citation context.
+ * -------------------------------------------------------------------------- */
+
+export const talkFrontmatterSchema = z.object({
+  title: z.string().min(1),
+  slug: z.string().min(1),
+  venue: z.string().min(1),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "date must be YYYY-MM-DD"),
+  audience: z.string().min(1),
+  abstract: z.string().min(1).max(600),
+  tags: z.array(z.string()).default([]),
+  pullQuote: z.string().optional(),
+  recordingUrl: z.string().url().optional(),
+  draft: z.boolean().optional(),
+});
+
+export type TalkFrontmatter = z.infer<typeof talkFrontmatterSchema>;
+
+export interface Talk {
+  frontmatter: TalkFrontmatter;
+  /** Full transcript / talk body. Markdown formatted. */
+  content: string;
+  readingMinutes: number;
+}
+
+async function readTalkFile(filename: string): Promise<Talk> {
+  const fullPath = path.join(CONTENT_ROOT, "talks", filename);
+  const raw = await fs.readFile(fullPath, "utf8");
+  const parsed = matter(raw);
+  const frontmatter = talkFrontmatterSchema.parse(parsed.data);
+  return {
+    frontmatter,
+    content: parsed.content,
+    readingMinutes: estimateReadingMinutes(parsed.content),
+  };
+}
+
+export async function listTalks(): Promise<Talk[]> {
+  const files = await readDir("talks");
+  const all = await Promise.all(files.map(readTalkFile));
+  const visible =
+    process.env.NODE_ENV === "production"
+      ? all.filter((t) => !t.frontmatter.draft)
+      : all;
+  return visible.sort(
+    (a, b) => b.frontmatter.date.localeCompare(a.frontmatter.date),
+  );
+}
+
+export async function getTalk(slug: string): Promise<Talk | null> {
+  const files = await readDir("talks");
+  for (const file of files) {
+    const talk = await readTalkFile(file);
+    if (talk.frontmatter.slug === slug) return talk;
+  }
+  return null;
+}
+
+export async function listTalkSlugs(): Promise<string[]> {
+  const talks = await listTalks();
+  return talks.map((t) => t.frontmatter.slug);
+}

@@ -66,6 +66,18 @@ export const principalsInboxLimit = createLimiter(
   "1 h",
 );
 
+export const talkExplorerLimit = createLimiter(
+  "demo:talk-explorer",
+  20,
+  "1 h",
+);
+
+export const ingestLimit = createLimiter(
+  "admin:ingest",
+  4,
+  "10 m",
+);
+
 // Niall’s Desk passcode attempts. Tight ceiling so a leaked URL can’t be brute-forced.
 export const deskAuthLimit = createLimiter(
   "desk:auth",
