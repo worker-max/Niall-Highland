@@ -47,6 +47,10 @@
   --accent-hover: var(--accent-400);
   --signal: #1E8C6E;
 
+  /* Per-essay accent tint — 6–7% wash behind figures/sidebars. Default holds
+   * the house teal; overridden per-essay by the [data-accent] islands below. */
+  --accent-tint: rgba(62, 139, 135, 0.07);
+
   /* Typography — self-hosted via next/font (see app/layout.tsx). */
   --font-display: var(--font-fraunces), "GT Sectra", "Tiempos Headline", Georgia, serif;
   --font-body: var(--font-inter), "Söhne", -apple-system, BlinkMacSystemFont, sans-serif;
@@ -129,6 +133,63 @@
   --signal: #7FE3C7;
   color-scheme: dark;
 }
+
+/* -----------------------------------------------------------------------------
+ * Per-essay accent islands (essay engine).
+ * A feature article may carry an `accent` in frontmatter; the renderer stamps
+ * it as data-accent on the article root. We swap ONLY the accent family + tint
+ * — surfaces, text, and border stay on the page theme, so light/dark editorial
+ * warmth is preserved (unlike a full cinematic palette swap). Every hue is
+ * tuned to clear WCAG AA large-text contrast on BOTH paper-50 and ink-900.
+ * Dark-mode rows lighten hues that would otherwise sink into ink-900.
+ * ---------------------------------------------------------------------------*/
+[data-accent="teal"] {
+  --accent: #3E8B87;
+  --accent-hover: #5BA8A4;
+  --accent-tint: rgba(62, 139, 135, 0.07);
+}
+[data-accent="indigo"] {
+  --accent: #4C63B6;
+  --accent-hover: #6B7FCB;
+  --accent-tint: rgba(76, 99, 182, 0.07);
+}
+[data-accent="clay"] {
+  --accent: #A15230;
+  --accent-hover: #C87A50;
+  --accent-tint: rgba(161, 82, 48, 0.07);
+}
+[data-accent="moss"] {
+  --accent: #526E33;
+  --accent-hover: #789A52;
+  --accent-tint: rgba(82, 110, 51, 0.07);
+}
+[data-accent="plum"] {
+  --accent: #8A4E7A;
+  --accent-hover: #A76B96;
+  --accent-tint: rgba(138, 78, 122, 0.07);
+}
+
+.dark [data-accent="indigo"],
+:root[data-theme="dark"] [data-accent="indigo"] {
+  --accent: #8CA0E8;
+  --accent-hover: #A6B6F0;
+}
+.dark [data-accent="clay"],
+:root[data-theme="dark"] [data-accent="clay"] {
+  --accent: #E08A5E;
+  --accent-hover: #EBA37E;
+}
+.dark [data-accent="moss"],
+:root[data-theme="dark"] [data-accent="moss"] {
+  --accent: #9DBE6E;
+  --accent-hover: #B4CE8A;
+}
+.dark [data-accent="plum"],
+:root[data-theme="dark"] [data-accent="plum"] {
+  --accent: #C48AB4;
+  --accent-hover: #D4A6C8;
+}
+/* teal holds on both themes via the existing accent tokens. */
 
 /* -----------------------------------------------------------------------------
  * Tailwind v4 theme binding — expose tokens as utility-ready variables.

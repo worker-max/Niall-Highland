@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import { EditorialSection } from "@/components/primitives/EditorialSection";
 import { PullQuote } from "@/components/primitives/PullQuote";
+import * as EssayKit from "@/components/essay";
 import { getEssay, listEssaySlugs } from "@/lib/content";
 import { BlogPostingJsonLd } from "@/lib/jsonld";
 
@@ -28,7 +29,12 @@ export async function generateMetadata(
   };
 }
 
-/** Custom MDX components \u2014 editorial typography for prose, custom PullQuote. */
+/**
+ * MDX component map. HTML-tag overrides give plain markdown its editorial
+ * typography; the essay engine toolkit is spread in so features can compose
+ * <Figure>, <Sidebar>, <Callout>, <ExplanatoryFigure>, etc. by tag without
+ * per-file imports. PullQuote is exposed for inline use as well.
+ */
 const mdxComponents = {
   h1: (props: React.ComponentProps<"h1">) => (
     <h1
@@ -78,6 +84,8 @@ const mdxComponents = {
   hr: () => (
     <hr className="my-[var(--space-12)] border-[color:var(--border)]" />
   ),
+  PullQuote,
+  ...EssayKit,
 };
 
 export default async function EssayPage({ params }: PageProps) {
@@ -85,41 +93,36 @@ export default async function EssayPage({ params }: PageProps) {
   const essay = await getEssay(slug);
   if (!essay) notFound();
 
+  const { frontmatter, readingMinutes } = essay;
+
   return (
-    <>
+    <div data-accent={frontmatter.accent}>
       <BlogPostingJsonLd
-        url={`https://niallhighland.com/writing/${essay.frontmatter.slug}`}
-        title={essay.frontmatter.title}
-        description={essay.frontmatter.excerpt}
-        datePublished={essay.frontmatter.date}
-        tags={essay.frontmatter.tags}
+        url={`https://niallhighland.com/writing/${frontmatter.slug}`}
+        title={frontmatter.title}
+        description={frontmatter.excerpt}
+        datePublished={frontmatter.date}
+        tags={frontmatter.tags}
       />
+
       <EditorialSection
-        container="reading"
+        container="standard"
         padding="spacious"
-        eyebrow={formatDate(essay.frontmatter.date)}
         className="pt-[var(--space-32)]"
       >
-        <h1 className="font-display text-[length:var(--text-display)] leading-[var(--leading-display)] tracking-[-0.02em] text-[color:var(--text)] [text-wrap:balance]">
-          {essay.frontmatter.title}
-        </h1>
-        <p className="mt-[var(--space-6)] text-[length:var(--text-lead)] leading-[var(--leading-body)] text-[color:var(--text-muted)]">
-          {essay.frontmatter.excerpt}
-        </p>
-        <p className="mt-[var(--space-6)] font-mono text-[var(--text-caption)] uppercase tracking-[var(--tracking-label)] text-[color:var(--text-faint)]">
-          {essay.readingMinutes} min read
-          {essay.frontmatter.tags.length > 0 ? (
-            <>
-              {" \u00b7 "}
-              {essay.frontmatter.tags.map((t) => `#${t}`).join(" ")}
-            </>
-          ) : null}
-        </p>
+        <EssayKit.EssayHero
+          kicker={frontmatter.kicker}
+          title={frontmatter.title}
+          deck={frontmatter.deck ?? frontmatter.excerpt}
+          date={frontmatter.date}
+          readingMinutes={readingMinutes}
+          readingLevel={frontmatter.readingLevel}
+        />
       </EditorialSection>
 
-      {essay.frontmatter.pullQuote ? (
+      {frontmatter.pullQuote ? (
         <EditorialSection container="reading" padding="default">
-          <PullQuote>{essay.frontmatter.pullQuote}</PullQuote>
+          <PullQuote>{frontmatter.pullQuote}</PullQuote>
         </EditorialSection>
       ) : null}
 
@@ -137,16 +140,6 @@ export default async function EssayPage({ params }: PageProps) {
           <span aria-hidden="true">&larr;</span> All essays
         </Link>
       </EditorialSection>
-    </>
+    </div>
   );
-}
-
-function formatDate(iso: string): string {
-  const d = new Date(`${iso}T00:00:00Z`);
-  return d.toLocaleDateString("en-GB", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    timeZone: "UTC",
-  });
 }

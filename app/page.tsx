@@ -6,8 +6,9 @@ import { LessonPlanAlchemist } from "@/components/demos/LessonPlanAlchemist";
 import { CurriculumAudit } from "@/components/demos/CurriculumAudit";
 import { WhatNiallDoes } from "@/components/sections/WhatNiallDoes";
 import { TrackRecord } from "@/components/sections/TrackRecord";
+import { Reading } from "@/components/sections/Reading";
 import { Engage } from "@/components/sections/Engage";
-import { ContactLazy } from "@/components/sections/ContactLazy";
+import { Contact } from "@/components/sections/Contact";
 import {
   GapIcon,
   LessonPlanIcon,
@@ -182,10 +183,12 @@ export default function HomePage() {
         <PrincipalsInbox />
       </EditorialSection>
 
+      <Reading />
+
       <Engage />
 
-      <ContactLazy
-        email="hello@niallhighland.com"
+      <Contact
+        email="niallhighland@gmail.com"
         calendlyUrl={process.env.NEXT_PUBLIC_CALENDLY_URL}
         linkedInUrl="https://www.linkedin.com/in/niall-highland"
       />

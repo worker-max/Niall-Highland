@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { EditorialSection } from "@/components/primitives/EditorialSection";
 import { WritingIcon } from "@/components/icons";
 import { listEssays } from "@/lib/content";
+import { CatalogGrid, type CatalogEssay } from "./CatalogGrid";
+import { FeaturedCard } from "./FeaturedCard";
 
 export const metadata: Metadata = {
   title: "Writing",
@@ -12,6 +13,20 @@ export const metadata: Metadata = {
 
 export default async function WritingIndexPage() {
   const essays = await listEssays();
+
+  const cards: CatalogEssay[] = essays.map((e) => ({
+    slug: e.frontmatter.slug,
+    title: e.frontmatter.title,
+    deck: e.frontmatter.deck ?? e.frontmatter.excerpt,
+    date: e.frontmatter.date,
+    readingMinutes: e.readingMinutes,
+    tags: e.frontmatter.tags,
+    accent: e.frontmatter.accent,
+    kicker: e.frontmatter.kicker,
+  }));
+
+  const featured = cards.find((_, i) => essays[i].frontmatter.featured) ?? null;
+  const rest = featured ? cards.filter((c) => c.slug !== featured.slug) : cards;
 
   return (
     <>
@@ -31,74 +46,25 @@ export default async function WritingIndexPage() {
           </h1>
         </div>
         <p className="mt-[var(--space-6)] max-w-[var(--width-reading)] text-[length:var(--text-lead)] leading-[var(--leading-body)] text-[color:var(--text-muted)]">
-          Short pieces on AI policy, assessment, leadership, and the work of
-          building faculty fluency. Written for heads, curriculum directors,
-          and department leads \u2014 not for the AI-in-education thought
+          Feature-length pieces on AI policy, assessment, leadership, and the
+          work of building faculty fluency. Written for heads, curriculum
+          directors, and department leads — not for the AI-in-education thought
           economy.
         </p>
       </EditorialSection>
 
       <EditorialSection container="wide" padding="default">
-        {essays.length === 0 ? (
+        {cards.length === 0 ? (
           <p className="text-[length:var(--text-body)] text-[color:var(--text-muted)]">
-            New essays are in the pipeline. Check back shortly \u2014 or
-            subscribe to the newsletter once it launches.
+            New essays are in the pipeline. Check back shortly.
           </p>
         ) : (
-          <ul className="flex flex-col divide-y divide-[color:var(--border)]">
-            {essays.map((essay) => (
-              <li key={essay.frontmatter.slug}>
-                <Link
-                  href={`/writing/${essay.frontmatter.slug}`}
-                  className="group grid gap-[var(--space-4)] py-[var(--space-8)] md:grid-cols-[160px_1fr] md:gap-[var(--space-8)]"
-                >
-                  <div className="flex flex-col gap-[var(--space-2)]">
-                    <time
-                      dateTime={essay.frontmatter.date}
-                      className="font-mono text-[var(--text-caption)] uppercase tracking-[var(--tracking-label)] text-[color:var(--text-faint)]"
-                    >
-                      {formatDate(essay.frontmatter.date)}
-                    </time>
-                    <span className="font-mono text-[var(--text-caption)] uppercase tracking-[var(--tracking-label)] text-[color:var(--text-faint)]">
-                      {essay.readingMinutes} min read
-                    </span>
-                  </div>
-                  <div>
-                    <h2 className="font-display text-[length:var(--text-h1)] leading-[1.1] tracking-[-0.02em] text-[color:var(--text)] group-hover:text-[color:var(--accent)] transition-colors [text-wrap:balance]">
-                      {essay.frontmatter.title}
-                    </h2>
-                    <p className="mt-[var(--space-4)] max-w-[var(--width-reading)] text-[length:var(--text-body)] leading-[var(--leading-body)] text-[color:var(--text-muted)]">
-                      {essay.frontmatter.excerpt}
-                    </p>
-                    {essay.frontmatter.tags.length > 0 ? (
-                      <ul className="mt-[var(--space-4)] flex flex-wrap gap-[var(--space-2)]">
-                        {essay.frontmatter.tags.map((tag) => (
-                          <li
-                            key={tag}
-                            className="font-mono text-[var(--text-caption)] uppercase tracking-[var(--tracking-label)] text-[color:var(--text-faint)]"
-                          >
-                            #{tag}
-                          </li>
-                        ))}
-                      </ul>
-                    ) : null}
-                  </div>
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <>
+            {featured ? <FeaturedCard essay={featured} /> : null}
+            <CatalogGrid essays={rest} />
+          </>
         )}
       </EditorialSection>
     </>
   );
-}
-
-function formatDate(iso: string): string {
-  const d = new Date(`${iso}T00:00:00Z`);
-  return d.toLocaleDateString("en-GB", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    timeZone: "UTC",
-  });
 }

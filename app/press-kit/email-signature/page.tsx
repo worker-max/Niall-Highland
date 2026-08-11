@@ -27,7 +27,7 @@ const HTML = `<table cellpadding="0" cellspacing="0" style="font-family:Inter,Ar
       <div style="font-size:12px;margin-top:8px;">
         <a href="https://niallhighland.com" style="color:#3E8B87;text-decoration:none;">niallhighland.com</a>
         &nbsp;·&nbsp;
-        <a href="mailto:hello@niallhighland.com" style="color:#3E8B87;text-decoration:none;">hello@niallhighland.com</a>
+        <a href="mailto:niallhighland@gmail.com" style="color:#3E8B87;text-decoration:none;">niallhighland@gmail.com</a>
       </div>
     </td>
   </tr>
@@ -36,7 +36,7 @@ const HTML = `<table cellpadding="0" cellspacing="0" style="font-family:Inter,Ar
 const PLAIN = `Niall Highland
 Associate Principal · International School of Krakow
 AI strategy for international schools
-niallhighland.com · hello@niallhighland.com`;
+niallhighland.com · niallhighland@gmail.com`;
 
 export default function EmailSignaturePage() {
   return (

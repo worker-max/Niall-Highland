@@ -192,7 +192,7 @@ export default function IconsShowcasePage() {
             role="Associate Principal \u00b7 International School of Krakow"
             contacts={[
               "niallhighland.com",
-              "hello@niallhighland.com",
+              "niallhighland@gmail.com",
               "in/niall-highland",
             ]}
           />
@@ -204,7 +204,7 @@ export default function IconsShowcasePage() {
             role="Consultant \u2014 AI in international schools"
             contacts={[
               "niallhighland.com",
-              "hello@niallhighland.com",
+              "niallhighland@gmail.com",
             ]}
           />
           <BusinessCard
@@ -215,7 +215,7 @@ export default function IconsShowcasePage() {
             role="Niall Highland"
             contacts={[
               "niallhighland.com/engage/keynote",
-              "hello@niallhighland.com",
+              "niallhighland@gmail.com",
             ]}
             layout="demo"
           />

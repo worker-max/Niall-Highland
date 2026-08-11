@@ -53,7 +53,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             {children}
           </main>
           <Footer
-            email="hello@niallhighland.com"
+            email="niallhighland@gmail.com"
             calendlyUrl={process.env.NEXT_PUBLIC_CALENDLY_URL}
             linkedInUrl="https://www.linkedin.com/in/niall-highland"
           />

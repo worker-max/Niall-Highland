@@ -28,7 +28,7 @@ export interface CardVariant {
 
 const COMMON_CONTACTS = [
   "niallhighland.com",
-  "hello@niallhighland.com",
+  "niallhighland@gmail.com",
   "in/niall-highland",
 ] as const;
 
@@ -64,7 +64,7 @@ export const CARDS: ReadonlyArray<CardVariant> = [
     eyebrow: "Keynotes · INSET · Board sessions",
     title: "On AI, teaching, and the job we’re actually doing now",
     role: "Niall Highland",
-    contacts: ["niallhighland.com/engage/keynote", "hello@niallhighland.com"],
+    contacts: ["niallhighland.com/engage/keynote", "niallhighland@gmail.com"],
   },
   {
     id: "anchor-raised",

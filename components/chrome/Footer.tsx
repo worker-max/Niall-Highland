@@ -25,7 +25,7 @@ interface FooterProps {
 }
 
 export function Footer({
-  email = "hello@niallhighland.com",
+  email = "niallhighland@gmail.com",
   calendlyUrl,
   linkedInUrl = "https://www.linkedin.com/",
 }: FooterProps) {

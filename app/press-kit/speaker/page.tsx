@@ -62,7 +62,7 @@ export default async function SpeakerPackPage() {
           </div>
           <div style={{ textAlign: "right", fontSize: "9pt", color: "#5C5A52", lineHeight: 1.5 }}>
             niallhighland.com<br />
-            hello@niallhighland.com
+            niallhighland@gmail.com
           </div>
         </header>
 
@@ -113,7 +113,7 @@ export default async function SpeakerPackPage() {
         <section style={{ marginTop: "10mm", borderTop: "1px solid #C9C1B0", paddingTop: "5mm" }}>
           <p style={{ fontFamily: "monospace", fontSize: "9pt", letterSpacing: "0.18em", textTransform: "uppercase", color: "#3E8B87" }}>Booking</p>
           <p style={{ marginTop: "2mm", fontSize: "10pt", lineHeight: 1.55 }}>
-            Email <strong>hello@niallhighland.com</strong> with audience size, event date, format, and the outcome you want delegates walking away with. Niall replies within two working days.
+            Email <strong>niallhighland@gmail.com</strong> with audience size, event date, format, and the outcome you want delegates walking away with. Niall replies within two working days.
           </p>
         </section>
       </article>

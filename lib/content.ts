@@ -17,6 +17,11 @@ import { z } from "zod";
 
 const CONTENT_ROOT = path.join(process.cwd(), "content");
 
+/** Curated per-essay accent keys — see the [data-accent] islands in globals.css.
+ * Each hue holds WCAG AA large-text contrast on both light and dark surfaces. */
+export const essayAccents = ["teal", "indigo", "clay", "moss", "plum"] as const;
+export type EssayAccent = (typeof essayAccents)[number];
+
 export const essayFrontmatterSchema = z.object({
   title: z.string().min(1),
   slug: z.string().min(1),
@@ -27,6 +32,20 @@ export const essayFrontmatterSchema = z.object({
   tags: z.array(z.string()).default([]),
   pullQuote: z.string().optional(),
   draft: z.boolean().optional(),
+
+  // Essay-engine additions (all optional — existing essays validate unchanged).
+  /** Category eyebrow above the title, e.g. "AI Strategy · School Leadership". */
+  kicker: z.string().optional(),
+  /** Standfirst / sub-headline under the title. Falls back to `excerpt`. */
+  deck: z.string().optional(),
+  /** Per-essay accent family. Defaults to the house teal when omitted. */
+  accent: z.enum(essayAccents).default("teal"),
+  /** Promotes the essay to the catalog hero slot. */
+  featured: z.boolean().optional(),
+  /** Audience furniture surfaced in the hero, e.g. "For heads & curriculum leads". */
+  readingLevel: z.string().optional(),
+  /** Credit line for hero/figure art. */
+  figureCredit: z.string().optional(),
 });
 
 export type EssayFrontmatter = z.infer<typeof essayFrontmatterSchema>;

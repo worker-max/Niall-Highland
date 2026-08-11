@@ -81,7 +81,7 @@ ${VOICE_NOTE}
 
 ---
 
-Niall Highland · niallhighland.com · hello@niallhighland.com
+Niall Highland · niallhighland.com · niallhighland@gmail.com
 `,
   },
   {

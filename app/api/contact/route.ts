@@ -27,19 +27,21 @@ const requestSchema = z.object({
  * Resend. Graceful degradation: if RESEND_API_KEY is missing we return 503
  * so the client surfaces "email directly" fallback copy instead of crashing.
  *
- * CONTACT_TO defaults to hello@niallhighland.com; override via env once
+ * CONTACT_TO defaults to niallhighland@gmail.com; override via env once
  * Niall confirms the forwarding inbox.
  */
 export async function POST(req: Request) {
   const apiKey = process.env.RESEND_API_KEY;
-  const to = process.env.CONTACT_TO ?? "hello@niallhighland.com";
-  const from = process.env.CONTACT_FROM ?? "Niall Highland site <hello@niallhighland.com>";
+  const to = process.env.CONTACT_TO ?? "niallhighland@gmail.com";
+  // Sender must be on a Resend-verified domain — a Gmail address can't send.
+  // Niall receives replies at his contact address (CONTACT_TO) below.
+  const from = process.env.CONTACT_FROM ?? "Niall Highland site <no-reply@niallhighland.com>";
 
   if (!apiKey) {
     return NextResponse.json(
       {
         error:
-          "Email isn\u2019t wired up yet. Please email hello@niallhighland.com directly.",
+          "Email isn\u2019t wired up yet. Please email niallhighland@gmail.com directly.",
       },
       { status: 503 },
     );
@@ -70,14 +72,14 @@ export async function POST(req: Request) {
     const result = await resend.emails.send({ from, to, subject, text, replyTo: undefined });
     if (result.error) {
       return NextResponse.json(
-        { error: "Couldn\u2019t send the message. Please email hello@niallhighland.com directly." },
+        { error: "Couldn\u2019t send the message. Please email niallhighland@gmail.com directly." },
         { status: 502 },
       );
     }
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json(
-      { error: "Couldn\u2019t send the message. Please email hello@niallhighland.com directly." },
+      { error: "Couldn\u2019t send the message. Please email niallhighland@gmail.com directly." },
       { status: 502 },
     );
   }

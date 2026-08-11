@@ -86,7 +86,7 @@ export default async function LetterheadPrint({ params }: PageProps) {
           {!formal ? (
             <div style={{ textAlign: "right", fontSize: "9pt", color: "#5C5A52", lineHeight: 1.5 }}>
               niallhighland.com<br />
-              hello@niallhighland.com
+              niallhighland@gmail.com
             </div>
           ) : null}
         </header>
@@ -128,7 +128,7 @@ export default async function LetterheadPrint({ params }: PageProps) {
               paddingTop: "4mm",
             }}
           >
-            niallhighland.com · hello@niallhighland.com
+            niallhighland.com · niallhighland@gmail.com
           </footer>
         ) : null}
       </div>

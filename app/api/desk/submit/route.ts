@@ -29,8 +29,9 @@ export async function POST(req: Request) {
   }
 
   const apiKey = process.env.RESEND_API_KEY;
-  const to = process.env.DESK_NOTIFY_EMAIL ?? process.env.CONTACT_TO ?? "hello@niallhighland.com";
-  const from = process.env.CONTACT_FROM ?? "Niall’s Desk <hello@niallhighland.com>";
+  const to = process.env.DESK_NOTIFY_EMAIL ?? process.env.CONTACT_TO ?? "niallhighland@gmail.com";
+  // Sender must be on a Resend-verified domain — a Gmail address can't send.
+  const from = process.env.CONTACT_FROM ?? "Niall’s Desk <no-reply@niallhighland.com>";
 
   if (!apiKey) {
     return NextResponse.json(
