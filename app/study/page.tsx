@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { EditorialSection } from "@/components/primitives/EditorialSection";
 import { Callout, Compare, ComparisonTable, Section, Sidebar } from "@/components/essay";
+import { BlockedVsMixed } from "@/components/study/BlockedVsMixed";
+import { CramVsSpace } from "@/components/study/CramVsSpace";
 import { RereadVsRecall } from "@/components/study/RereadVsRecall";
 import { SUBJECT_ROUTINES } from "@/lib/study/content";
 
@@ -50,11 +52,24 @@ export default function StudyPage() {
 
         <Section label="The lab" index="02">
           <p className={body}>
-            Do not take my word for any of this. Run the experiment. It takes about six minutes, it works on a phone, and
-            nothing you type leaves this page.
+            Do not take my word for any of this. Run the experiments. There are three, each takes a few minutes, they work on
+            a phone, and nothing you type leaves this page.
           </p>
           <div className="mt-[var(--space-8)]">
             <RereadVsRecall />
+          </div>
+          <p className={body}>
+            Next, timing. Cramming feels efficient because it works for tomorrow. See what it does to next week.
+          </p>
+          <div className="mt-[var(--space-8)]">
+            <CramVsSpace />
+          </div>
+          <p className={body}>
+            Last, mixing. Doing twenty problems of the same kind feels smooth. Real tests never hand you twenty of the same
+            kind.
+          </p>
+          <div className="mt-[var(--space-8)]">
+            <BlockedVsMixed />
           </div>
         </Section>
 
