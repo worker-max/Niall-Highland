@@ -93,24 +93,7 @@ export function RereadVsRecall() {
   const step = studyStep(state);
 
   return (
-    <DemoShell
-      label="Lab 01 · Reread vs. Recall"
-      title="About 6 minutes"
-      footer={
-        <p className={muted}>
-          Based on{" "}
-          {EXPERIMENT_SOURCES.slice(0, 2).map((s, i) => (
-            <span key={s.url}>
-              {i > 0 ? " and " : null}
-              <a href={s.url} className="text-[color:var(--accent)] underline underline-offset-4">
-                {s.label}
-              </a>
-            </span>
-          ))}
-          . Nothing you enter leaves this page.
-        </p>
-      }
-    >
+    <DemoShell label="Lab 01 · Reread vs. Recall" title="About 6 minutes">
       <div className="flex flex-col gap-[var(--space-6)]" aria-live="polite">
         {state.phase === "intro" ? (
           <>
@@ -227,6 +210,19 @@ export function RereadVsRecall() {
         ) : null}
 
         {state.phase === "results" ? <Results state={state} onRestart={() => dispatch({ type: "restart", seed: Date.now() })} /> : null}
+
+        <p className={`border-t border-[color:var(--border)] pt-[var(--space-4)] ${muted}`}>
+          Based on{" "}
+          {EXPERIMENT_SOURCES.slice(0, 2).map((s, i) => (
+            <span key={s.url}>
+              {i > 0 ? " and " : null}
+              <a href={s.url} className="text-[color:var(--accent)] underline underline-offset-4">
+                {s.label}
+              </a>
+            </span>
+          ))}
+          . Nothing you enter leaves this page.
+        </p>
       </div>
     </DemoShell>
   );
