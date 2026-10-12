@@ -4,6 +4,7 @@ import { StudyInputError } from "../errors";
 import {
   canAdvance,
   createSession,
+  phaseAnnouncement,
   sessionReducer,
   studyStep,
   summarizeSession,
@@ -89,6 +90,20 @@ describe("sessionReducer flow", () => {
     }
   });
 
+  it("clearing a prediction sets it back to null and blocks advancing", () => {
+    let s = run(
+      createSession(1),
+      { type: "start", seed: 2 },
+      { type: "next" },
+      { type: "next" },
+      { type: "predict", condition: "reread", value: 4 },
+      { type: "predict", condition: "recall", value: 3 },
+    );
+    s = sessionReducer(s, { type: "clearPrediction", condition: "reread" });
+    expect(s.predictions.reread).toBeNull();
+    expect(canAdvance(s)).toBe(false);
+  });
+
   it("quiz cannot finish with unanswered items", () => {
     let s = toQuiz();
     expect(s.phase).toBe("quiz");
@@ -118,6 +133,20 @@ describe("sessionReducer flow", () => {
     const done = sessionReducer(answerAll(toQuiz(), () => true), { type: "next" });
     const fresh = sessionReducer(done, { type: "restart", seed: 99 });
     expect(fresh).toEqual(createSession(99));
+  });
+});
+
+describe("phaseAnnouncement", () => {
+  it("gives a short status line for every phase", () => {
+    let s = run(createSession(1), { type: "start", seed: 2 });
+    const step = studyStep(s);
+    expect(phaseAnnouncement(s)).toBe(
+      `Round 1: ${step?.condition === "reread" ? "Reread" : "Self-test"}, 60 seconds`,
+    );
+    expect(phaseAnnouncement(createSession(1))).toBe("Reread vs. Recall experiment, ready to start");
+    s = run(s, { type: "next" }, { type: "next" });
+    expect(phaseAnnouncement(s)).toBe("Predict your scores");
+    expect(phaseAnnouncement(toQuiz())).toBe("Quiz: 16 questions");
   });
 });
 

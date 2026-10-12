@@ -1,4 +1,4 @@
-import { FACT_SETS, FACTS_PER_SET, type FactSet, type SetId } from "./content";
+import { DISTRACT_SECONDS, FACT_SETS, FACTS_PER_SET, STUDY_SECONDS, type FactSet, type SetId } from "./content";
 import { StudyInputError } from "./errors";
 import { createRng } from "./random";
 import { predictionGap, scoreQuiz, type QuizScore } from "./recall";
@@ -20,6 +20,7 @@ export type SessionAction =
   | { type: "start"; seed: number }
   | { type: "next" }
   | { type: "predict"; condition: Condition; value: number }
+  | { type: "clearPrediction"; condition: Condition }
   | { type: "answer"; factId: string; choice: string }
   | { type: "restart"; seed: number };
 
@@ -84,6 +85,9 @@ export function sessionReducer(state: SessionState, action: SessionAction): Sess
     case "predict":
       if (state.phase !== "predict" || !isValidPrediction(action.value)) return state;
       return { ...state, predictions: { ...state.predictions, [action.condition]: action.value } };
+    case "clearPrediction":
+      if (state.phase !== "predict") return state;
+      return { ...state, predictions: { ...state.predictions, [action.condition]: null } };
     case "answer":
       if (state.phase !== "quiz" || !ALL_FACT_IDS.has(action.factId)) return state;
       return { ...state, answers: { ...state.answers, [action.factId]: action.choice } };
@@ -94,6 +98,28 @@ export function studyStep(state: SessionState): { condition: Condition; set: Fac
   if (state.phase !== "study-1" && state.phase !== "study-2") return null;
   const condition = state.order[state.phase === "study-1" ? 0 : 1];
   return { condition, set: FACT_SETS[state.setFor[condition]] };
+}
+
+/** One short line for a screen-reader status region, announced when the phase changes. */
+export function phaseAnnouncement(state: SessionState): string {
+  switch (state.phase) {
+    case "intro":
+      return "Reread vs. Recall experiment, ready to start";
+    case "study-1":
+    case "study-2": {
+      const condition = state.order[state.phase === "study-1" ? 0 : 1];
+      const round = state.phase === "study-1" ? 1 : 2;
+      return `Round ${round}: ${condition === "reread" ? "Reread" : "Self-test"}, ${STUDY_SECONDS} seconds`;
+    }
+    case "predict":
+      return "Predict your scores";
+    case "distract":
+      return `Short break, ${DISTRACT_SECONDS} seconds`;
+    case "quiz":
+      return `Quiz: ${TOTAL_FACTS} questions`;
+    case "results":
+      return "Your results are ready";
+  }
 }
 
 function resultFor(state: SessionState, condition: Condition): ConditionResult {

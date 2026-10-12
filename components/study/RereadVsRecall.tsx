@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { DemoShell } from "@/components/primitives/DemoShell";
 import {
   DISTRACT_SECONDS,
@@ -14,6 +14,7 @@ import { buildQuiz } from "@/lib/study/recall";
 import {
   canAdvance,
   createSession,
+  phaseAnnouncement,
   sessionReducer,
   studyStep,
   summarizeSession,
@@ -91,10 +92,28 @@ export function RereadVsRecall() {
   const next = useCallback(() => dispatch({ type: "next" }), []);
   const quiz = useMemo(() => buildQuiz(Object.values(FACT_SETS), state.seed), [state.seed]);
   const step = studyStep(state);
+  const announcement = phaseAnnouncement(state);
+  const headingRef = useRef<HTMLParagraphElement>(null);
+  const firstPhase = useRef(true);
+
+  // Keyboard users lose focus when the control they pressed unmounts; move it to the new phase's heading.
+  useEffect(() => {
+    if (firstPhase.current) {
+      firstPhase.current = false;
+      return;
+    }
+    headingRef.current?.focus();
+  }, [state.phase]);
 
   return (
     <DemoShell label="Lab 01 · Reread vs. Recall" title="About 6 minutes">
-      <div className="flex flex-col gap-[var(--space-6)]" aria-live="polite">
+      <div className="flex flex-col gap-[var(--space-6)]">
+        <p ref={headingRef} tabIndex={-1} className={`${label} outline-none`}>
+          {announcement}
+        </p>
+        <p role="status" className="sr-only">
+          {announcement}
+        </p>
         {state.phase === "intro" ? (
           <>
             <p className={lead}>
@@ -112,9 +131,7 @@ export function RereadVsRecall() {
         {step ? (
           <>
             <div className="flex flex-wrap items-baseline justify-between gap-[var(--space-3)]">
-              <p className={label}>
-                Round {state.phase === "study-1" ? 1 : 2} · {CONDITION_NAME[step.condition]} · {step.set.title}
-              </p>
+              <p className={muted}>{step.set.title}</p>
               <Countdown key={state.phase} seconds={STUDY_SECONDS} onDone={next} />
             </div>
             <p className={muted}>
@@ -142,7 +159,13 @@ export function RereadVsRecall() {
                   max={FACTS_PER_SET}
                   step={1}
                   value={state.predictions[condition] ?? ""}
-                  onChange={(e) => dispatch({ type: "predict", condition, value: Number(e.target.value) })}
+                  onChange={(e) =>
+                    dispatch(
+                      e.target.value === ""
+                        ? { type: "clearPrediction", condition }
+                        : { type: "predict", condition, value: e.target.valueAsNumber },
+                    )
+                  }
                   className="w-[5rem] rounded-[4px] border border-[color:var(--border)] bg-[color:var(--surface)] px-[var(--space-3)] py-[var(--space-2)] text-[color:var(--text)]"
                 />
                 <span className={muted}>out of {FACTS_PER_SET}</span>
@@ -158,10 +181,7 @@ export function RereadVsRecall() {
 
         {state.phase === "distract" ? (
           <>
-            <div className="flex flex-wrap items-baseline justify-between gap-[var(--space-3)]">
-              <p className={label}>Short break</p>
-              <Countdown key="distract" seconds={DISTRACT_SECONDS} onDone={next} />
-            </div>
+            <Countdown key="distract" seconds={DISTRACT_SECONDS} onDone={next} />
             <p className={lead}>
               Count backward from 300 by threes, out loud or in your head. This clears your short-term memory so the quiz
               measures what you actually learned.
@@ -216,7 +236,12 @@ export function RereadVsRecall() {
           {EXPERIMENT_SOURCES.slice(0, 2).map((s, i) => (
             <span key={s.url}>
               {i > 0 ? " and " : null}
-              <a href={s.url} className="text-[color:var(--accent)] underline underline-offset-4">
+              <a
+                href={s.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[color:var(--accent)] underline underline-offset-4"
+              >
                 {s.label}
               </a>
             </span>
