@@ -107,8 +107,8 @@ export default async function EssayPage({ params }: PageProps) {
 
       <EditorialSection
         container="standard"
-        padding="spacious"
-        className="pt-[var(--space-32)]"
+        padding="tight"
+        className="pt-[var(--space-24)] md:pt-[var(--space-32)]"
       >
         <EssayKit.EssayHero
           kicker={frontmatter.kicker}
@@ -121,18 +121,18 @@ export default async function EssayPage({ params }: PageProps) {
       </EditorialSection>
 
       {frontmatter.pullQuote ? (
-        <EditorialSection container="reading" padding="default">
+        <EditorialSection container="reading" padding="tight">
           <PullQuote>{frontmatter.pullQuote}</PullQuote>
         </EditorialSection>
       ) : null}
 
-      <EditorialSection container="reading" padding="default">
+      <EditorialSection container="reading" padding="tight" className="pt-0">
         <article className="prose-editorial">
           <MDXRemote source={essay.content} components={mdxComponents} />
         </article>
       </EditorialSection>
 
-      <EditorialSection container="reading" padding="default">
+      <EditorialSection container="reading" padding="tight">
         <Link
           href="/writing"
           className="inline-flex items-center gap-[var(--space-2)] font-mono text-[var(--text-caption)] uppercase tracking-[var(--tracking-label)] text-[color:var(--text-faint)] hover:text-[color:var(--text)]"
