@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import { DemoShell } from "@/components/primitives/DemoShell";
 import {
   DISTRACT_SECONDS,
@@ -20,14 +20,7 @@ import {
   summarizeSession,
   type Condition,
 } from "@/lib/study/recallSession";
-
-const primaryBtn =
-  "inline-flex items-center justify-center rounded-full bg-[color:var(--accent)] px-[var(--space-6)] py-[var(--space-3)] font-mono text-[var(--text-caption)] uppercase tracking-[var(--tracking-label)] text-[color:var(--surface)] transition-opacity disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--accent)]";
-const ghostBtn =
-  "inline-flex items-center justify-center rounded-full border border-[color:var(--border)] px-[var(--space-4)] py-[var(--space-2)] font-mono text-[var(--text-caption)] uppercase tracking-[var(--tracking-label)] text-[color:var(--text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--accent)]";
-const lead = "text-[length:var(--text-body)] leading-[var(--leading-body)] text-[color:var(--text)]";
-const muted = "text-[length:var(--text-small)] leading-[1.6] text-[color:var(--text-muted)]";
-const label = "font-mono text-[var(--text-caption)] uppercase tracking-[var(--tracking-label)] text-[color:var(--accent)]";
+import { ghostBtn, label, lead, muted, primaryBtn, sourceLink, usePhaseFocus } from "./ui";
 
 const CONDITION_NAME: Record<Condition, string> = { reread: "Reread", recall: "Self-test" };
 
@@ -93,17 +86,7 @@ export function RereadVsRecall() {
   const quiz = useMemo(() => buildQuiz(Object.values(FACT_SETS), state.seed), [state.seed]);
   const step = studyStep(state);
   const announcement = phaseAnnouncement(state);
-  const headingRef = useRef<HTMLParagraphElement>(null);
-  const firstPhase = useRef(true);
-
-  // Keyboard users lose focus when the control they pressed unmounts; move it to the new phase's heading.
-  useEffect(() => {
-    if (firstPhase.current) {
-      firstPhase.current = false;
-      return;
-    }
-    headingRef.current?.focus();
-  }, [state.phase]);
+  const headingRef = usePhaseFocus(state.phase);
 
   return (
     <DemoShell label="Lab 01 · Reread vs. Recall" title="About 6 minutes">
@@ -240,7 +223,7 @@ export function RereadVsRecall() {
                 href={s.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[color:var(--accent)] underline underline-offset-4"
+                className={sourceLink}
               >
                 {s.label}
               </a>
