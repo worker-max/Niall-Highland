@@ -59,6 +59,39 @@ export function retentionCurve(sessionDays: readonly number[], horizonDays: numb
   });
 }
 
+export interface CurvePoint {
+  day: number;
+  value: number;
+}
+
+/**
+ * Chart points from the first session to `horizonDays`. At each later session the
+ * curve steps straight up (two points on that day), so no line implies memory
+ * building on a day without study. Empty schedule gives no points.
+ */
+export function retentionPoints(sessionDays: readonly number[], horizonDays: number): CurvePoint[] {
+  if (sessionDays.length === 0) return [];
+  const sorted = [...sessionDays].sort((a, b) => a - b);
+  const first = sorted[0] as number;
+  const points: CurvePoint[] = [];
+  for (let day = first; day <= horizonDays; day += 1) {
+    const before = sorted.filter((d) => d < day);
+    if (sorted.includes(day) && before.length > 0) {
+      points.push({ day, value: forecastRetention(before, day) });
+    }
+    points.push({ day, value: forecastRetention(sorted.filter((d) => d <= day), day) });
+  }
+  return points;
+}
+
+/** Which preset a schedule matches, if any. */
+export function matchPreset(days: readonly number[]): "cram" | "spaced" | null {
+  const key = [...days].sort((a, b) => a - b).join(",");
+  if (key === CRAM_PRESET.join(",")) return "cram";
+  if (key === SPACED_PRESET.join(",")) return "spaced";
+  return null;
+}
+
 /** Add or remove a study day. Ignores days outside the plan and a fifth session. */
 export function toggleSessionDay(days: readonly number[], day: number): number[] {
   if (!Number.isInteger(day) || day < 0 || day >= TEST_DAY) return [...days];

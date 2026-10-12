@@ -4,7 +4,9 @@ import {
   CRAM_PRESET,
   FOLLOW_UP_DAYS,
   forecastRetention,
+  matchPreset,
   retentionCurve,
+  retentionPoints,
   SESSION_COUNT,
   SPACED_PRESET,
   TEST_DAY,
@@ -62,6 +64,31 @@ describe("retentionCurve", () => {
 
   it("is all zeros for an empty schedule", () => {
     expect(retentionCurve([], 5)).toEqual([0, 0, 0, 0, 0, 0]);
+  });
+});
+
+describe("matchPreset", () => {
+  it("names the preset a schedule matches, in any order", () => {
+    expect(matchPreset([13, 12, 11, 10])).toBe("cram");
+    expect(matchPreset([...SPACED_PRESET])).toBe("spaced");
+    expect(matchPreset([0, 1, 2, 3])).toBeNull();
+    expect(matchPreset([10, 11, 12])).toBeNull();
+  });
+});
+
+describe("retentionPoints", () => {
+  it("starts at the first session and steps straight up at later sessions", () => {
+    const points = retentionPoints([3, 8], 10);
+    expect(points[0]).toEqual({ day: 3, value: 1 });
+    const atEight = points.filter((p) => p.day === 8);
+    expect(atEight).toHaveLength(2);
+    expect(atEight[0]!.value).toBeLessThan(1);
+    expect(atEight[1]!.value).toBe(1);
+    expect(points[points.length - 1]!.day).toBe(10);
+  });
+
+  it("is empty for an empty schedule", () => {
+    expect(retentionPoints([], 10)).toEqual([]);
   });
 });
 

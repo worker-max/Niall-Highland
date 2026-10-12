@@ -7,7 +7,9 @@ import {
   CRAM_PRESET,
   FOLLOW_UP_DAYS,
   forecastRetention,
+  matchPreset,
   retentionCurve,
+  retentionPoints,
   SESSION_COUNT,
   SPACED_PRESET,
   TEST_DAY,
@@ -21,13 +23,23 @@ const H = 170;
 const PAD = { left: 34, right: 10, top: 14, bottom: 26 } as const;
 const PLAN_DAYS = Array.from({ length: TEST_DAY }, (_, d) => d);
 
+const EXPLANATION: Record<"cram" | "spaced" | "custom", string> = {
+  cram: "Crammed into the last four days, you remember plenty on test day and lose most of it within a week. Now try spreading it out.",
+  spaced:
+    "Spread out, the same four sessions hold up a week later, because each one comes after a little forgetting and has to rebuild the memory.",
+  custom:
+    "This is your own schedule. Compare it with the two presets: sessions late in the plan help test day, and gaps between sessions decide what is left a week later.",
+};
+
 const x = (day: number): number => PAD.left + (day / HORIZON) * (W - PAD.left - PAD.right);
 const y = (value: number): number => PAD.top + (1 - value) * (H - PAD.top - PAD.bottom);
 const pct = (value: number): string => `${Math.round(value * 100)}%`;
 
 function RetentionChart({ days, curve }: { days: readonly number[]; curve: readonly number[] }) {
   const [hoverDay, setHoverDay] = useState<number | null>(null);
-  const path = curve.map((v, d) => `${d === 0 ? "M" : "L"}${x(d).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  const path = retentionPoints(days, HORIZON)
+    .map((p, i) => `${i === 0 ? "M" : "L"}${x(p.day).toFixed(1)},${y(p.value).toFixed(1)}`)
+    .join(" ");
   const readoutDay = hoverDay ?? TEST_DAY;
   const step = (W - PAD.left - PAD.right) / HORIZON;
 
@@ -47,13 +59,13 @@ function RetentionChart({ days, curve }: { days: readonly number[]; curve: reado
         {[0, 0.5, 1].map((v) => (
           <g key={v}>
             <line x1={PAD.left} x2={W - PAD.right} y1={y(v)} y2={y(v)} stroke="var(--border)" strokeWidth={1} />
-            <text x={PAD.left - 6} y={y(v) + 3} textAnchor="end" fontSize={9} fill="var(--text-muted)">
+            <text x={PAD.left - 6} y={y(v) + 3} textAnchor="end" fontSize={11} fill="var(--text-muted)">
               {pct(v)}
             </text>
           </g>
         ))}
         {[0, 7, 14, 21].map((d) => (
-          <text key={d} x={x(d)} y={H - 8} textAnchor="middle" fontSize={9} fill="var(--text-muted)">
+          <text key={d} x={x(d)} y={H - 8} textAnchor="middle" fontSize={11} fill="var(--text-muted)">
             {d === 0 ? "Day 0" : d}
           </text>
         ))}
@@ -66,7 +78,7 @@ function RetentionChart({ days, curve }: { days: readonly number[]; curve: reado
           strokeWidth={1}
           strokeDasharray="3 3"
         />
-        <text x={x(TEST_DAY) + 4} y={PAD.top + 8} fontSize={9} fill="var(--text-muted)">
+        <text x={x(TEST_DAY) + 4} y={PAD.top + 8} fontSize={11} fill="var(--text-muted)">
           Test
         </text>
         <path d={path} fill="none" stroke="var(--accent)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
@@ -157,11 +169,11 @@ export function CramVsSpace() {
                 </div>
               ))}
             </div>
-            <RetentionChart days={days} curve={curve} />
-            <p className={lead}>
-              Crammed, you remember about as much on test day and lose most of it within a week. Spread out, the same four
-              sessions stick, because each one comes after a little forgetting and has to rebuild the memory.
+            <p role="status" className="sr-only">
+              {`On test day ${pct(forecastRetention(days, TEST_DAY))}, one week later ${pct(forecastRetention(days, HORIZON))}.`}
             </p>
+            <RetentionChart days={days} curve={curve} />
+            <p className={lead}>{EXPLANATION[matchPreset(days) ?? "custom"]}</p>
           </>
         ) : (
           <p className={lead}>Pick at least one study day to see the forecast.</p>

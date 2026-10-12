@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { DemoShell } from "@/components/primitives/DemoShell";
 import {
   buildBlockedSet,
@@ -45,6 +45,16 @@ function ProblemRunner({
   const [start] = useState(() => Date.now());
   const problem = problems[index] as Problem;
   const last = index === problems.length - 1;
+  const inputRef = useRef<HTMLInputElement>(null);
+  const nextRef = useRef<HTMLButtonElement>(null);
+
+  // Check and Next swap places, so focus would fall to the page; keep it on the control the student needs next.
+  useEffect(() => {
+    if (index > 0) inputRef.current?.focus();
+  }, [index]);
+  useEffect(() => {
+    if (checked !== null) nextRef.current?.focus();
+  }, [checked]);
 
   function check(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -73,6 +83,7 @@ function ProblemRunner({
       </label>
       <input
         id="practice-answer"
+        ref={inputRef}
         type="number"
         inputMode="numeric"
         step={1}
@@ -89,9 +100,11 @@ function ProblemRunner({
         </div>
       ) : (
         <>
-          <p className={lead}>{checked ? "Correct." : `Not quite. It was ${problem.answer}.`}</p>
+          <p role="status" className={lead}>
+            {checked ? "Correct." : `Not quite. It was ${problem.answer}.`}
+          </p>
           <div>
-            <button type="button" className={primaryBtn} onClick={advance}>
+            <button ref={nextRef} type="button" className={primaryBtn} onClick={advance}>
               {last ? "Finish this set" : "Next problem"}
             </button>
           </div>
