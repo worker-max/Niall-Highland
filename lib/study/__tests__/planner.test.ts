@@ -114,7 +114,7 @@ describe("planToIcs", () => {
   });
 
   it("gives different plans different event IDs so imports never overwrite each other", () => {
-    const uids = (text: string) => text.replace(/\r\n /g, "").match(/UID:[^\r]+/g) ?? [];
+    const uids = (text: string): string[] => text.replace(/\r\n /g, "").match(/UID:[^\r]+/g) ?? [];
     const other = planToIcs(buildPlan({ ...base, subjects: ["Biology"], testDate: "2026-11-09" }));
     const overlap = uids(ics).filter((u) => uids(other).includes(u));
     expect(overlap).toEqual([]);
