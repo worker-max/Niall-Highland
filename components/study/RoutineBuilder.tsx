@@ -53,6 +53,11 @@ export function RoutineBuilder() {
 
   function build() {
     setCopied(false);
+    if (testDate === "") {
+      setPlan(null);
+      setError("Pick your test date first.");
+      return;
+    }
     try {
       setPlan(buildPlan({ subjects, startDate, testDate, weeklyHours: Number(weeklyHours) }));
       setError(null);

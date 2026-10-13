@@ -5,6 +5,8 @@ import { Callout, Compare, ComparisonTable, Section, Sidebar } from "@/component
 import { BlockedVsMixed } from "@/components/study/BlockedVsMixed";
 import { CramVsSpace } from "@/components/study/CramVsSpace";
 import { RereadVsRecall } from "@/components/study/RereadVsRecall";
+import { RoutineBuilder } from "@/components/study/RoutineBuilder";
+import { SupportCheck } from "@/components/study/SupportCheck";
 import { SUBJECT_ROUTINES } from "@/lib/study/content";
 
 export const metadata: Metadata = {
@@ -86,6 +88,10 @@ export default function StudyPage() {
             <Compare aspect="Self-regulation" a="Rereads for hours, cannot tell what they actually know" b="A plan, a self-quiz to check, and an adjustment each week" />
             <Compare aspect="Test anxiety" a="Knows it at home, freezes in the exam" b="Frequent low-stakes timed practice; treating nerves as readiness" />
           </ComparisonTable>
+          <p className={body}>Want to see where you stand? Ten quick statements, two for each difference.</p>
+          <div className="mt-[var(--space-8)]">
+            <SupportCheck />
+          </div>
           <Callout tone="caution" label="When to ask for more">
             If reading stays slow, math facts never stick, or disorganization shows up everywhere despite real effort, ask
             for a proper evaluation. No quiz on a website can diagnose dyslexia or ADHD.
@@ -102,6 +108,12 @@ export default function StudyPage() {
               <Compare key={r.subject} aspect={r.subject} a={r.routine} b={r.why} />
             ))}
           </ComparisonTable>
+          <p className={body}>
+            Now turn it into a calendar. Pick your subjects and your test date, and the builder spaces everything out for you.
+          </p>
+          <div className="mt-[var(--space-8)]">
+            <RoutineBuilder />
+          </div>
         </Section>
 
         <Section label="For parents and teachers" index="05">
@@ -119,6 +131,11 @@ export default function StudyPage() {
               <li>What time are you going to bed?</li>
             </ul>
           </Sidebar>
+          <p className={body}>
+            Parents: run the first experiment side by side with your teen and compare your guesses. Then build the routine
+            together, put it on the family calendar, and spend ten minutes each Sunday asking how the week went and what
+            needs redoing.
+          </p>
           <p className={body}>
             Teachers: five retrieval questions at the start of every lesson, on last week&rsquo;s material, ungraded. It is
             the cheapest high-impact change available to you.
