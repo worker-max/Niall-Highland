@@ -109,6 +109,7 @@ export function assessSupport(answers: Readonly<Record<string, number>>): Suppor
   return {
     areas,
     suggestEvaluation: totals.reading === 4 || totals["executive-function"] === 4,
-    suggestCounselor: totals["test-anxiety"] === 4,
+    // Sleep or eating affected often is a wellbeing signal on its own.
+    suggestCounselor: totals["test-anxiety"] === 4 || answers.ta2 === 2,
   };
 }

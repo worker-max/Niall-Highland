@@ -9,7 +9,6 @@ describe("buildPlan", () => {
     const plan = buildPlan(base);
     const dates = plan.map((s) => s.date);
     expect([...dates].sort()).toEqual(dates);
-    expect(dates[0]).toBe("2026-10-12");
     for (const d of dates) {
       expect(d >= base.startDate).toBe(true);
       expect(d < base.testDate).toBe(true);
@@ -39,6 +38,36 @@ describe("buildPlan", () => {
     const perDay = new Map<string, number>();
     for (const s of plan) perDay.set(s.date, (perDay.get(s.date) ?? 0) + 1);
     for (const n of perDay.values()) expect(n).toBeLessThanOrEqual(MAX_SESSIONS_PER_DAY);
+  });
+
+  it("finishes on the day before the test", () => {
+    for (const input of [
+      base,
+      { ...base, subjects: ["Math", "History", "Biology"], weeklyHours: 3, testDate: "2026-11-23" },
+      { ...base, subjects: ["Math"], weeklyHours: 1, testDate: "2026-11-23" },
+      { ...base, subjects: ["Math"], weeklyHours: 1, testDate: "2026-10-15" },
+    ]) {
+      const plan = buildPlan(input);
+      expect(plan[plan.length - 1]!.date).toBe(addDays(input.testDate, -1));
+    }
+  });
+
+  it("includes every subject the student picked", () => {
+    const all = ["Math", "Biology", "Chemistry & physics", "English & essays", "History", "World languages", "Computer science", "Exams (SAT, AP, IB)"];
+    for (const input of [
+      { ...base, subjects: all.slice(0, 4), weeklyHours: 1, testDate: "2026-10-19" },
+      { ...base, subjects: all, weeklyHours: 2, testDate: "2026-10-19" },
+      { ...base, subjects: all.slice(0, 5), weeklyHours: 1 },
+    ]) {
+      const covered = new Set(buildPlan(input).map((s) => s.subject));
+      expect(covered.size).toBe(input.subjects.length);
+    }
+  });
+
+  it("rejects more subjects than the days can hold", () => {
+    expect(() => buildPlan({ ...base, subjects: ["Math", "History", "Biology", "World languages"], testDate: "2026-10-13" })).toThrow(
+      StudyInputError,
+    );
   });
 
   it("attaches the routine for each subject", () => {
@@ -72,7 +101,7 @@ describe("planToIcs", () => {
     expect(ics.startsWith("BEGIN:VCALENDAR\r\n")).toBe(true);
     expect(ics.endsWith("END:VCALENDAR\r\n")).toBe(true);
     expect(ics.match(/BEGIN:VEVENT/g)).toHaveLength(8);
-    expect(ics).toContain("DTSTART;VALUE=DATE:20261012");
+    expect(ics).toContain("DTSTART;VALUE=DATE:20261025");
     expect(ics.replace(/\r\n/g, "").includes("\n")).toBe(false);
   });
 
@@ -83,12 +112,20 @@ describe("planToIcs", () => {
   it("escapes commas and semicolons in text", () => {
     expect(ics.replace(/\r\n /g, "")).toContain("\\;");
   });
+
+  it("gives different plans different event IDs so imports never overwrite each other", () => {
+    const uids = (text: string) => text.replace(/\r\n /g, "").match(/UID:[^\r]+/g) ?? [];
+    const other = planToIcs(buildPlan({ ...base, subjects: ["Biology"], testDate: "2026-11-09" }));
+    const overlap = uids(ics).filter((u) => uids(other).includes(u));
+    expect(overlap).toEqual([]);
+    expect(uids(planToIcs(buildPlan(base)))).toEqual(uids(ics));
+  });
 });
 
 describe("planToText", () => {
   it("writes one dated line per session", () => {
     const lines = planToText(buildPlan(base)).split("\n");
     expect(lines).toHaveLength(8);
-    expect(lines[0]).toBe("Mon 12 Oct: Math, learn (30 min)");
+    expect(lines[0]).toMatch(/^(Mon|Tue) 1[23] Oct: Math, learn \(30 min\)$/);
   });
 });

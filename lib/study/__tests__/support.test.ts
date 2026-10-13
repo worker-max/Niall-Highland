@@ -42,6 +42,10 @@ describe("assessSupport", () => {
     expect(assessSupport(answersWith({ "test-anxiety": [2, 1] })).suggestCounselor).toBe(false);
   });
 
+  it("suggests talking to someone whenever worry often affects sleep or eating", () => {
+    expect(assessSupport(answersWith({ "test-anxiety": [0, 2] })).suggestCounselor).toBe(true);
+  });
+
   it("never mentions styles", () => {
     for (const scores of [{}, { reading: [2, 2] }, { reading: [1, 1] }] as const) {
       for (const r of assessSupport(answersWith(scores)).areas) expect(r.advice.toLowerCase()).not.toContain("style");

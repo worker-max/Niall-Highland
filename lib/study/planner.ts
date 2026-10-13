@@ -70,13 +70,19 @@ export function buildPlan(input: PlanInput): StudySession[] {
   });
 
   const perDayCap = Math.min(MAX_SESSIONS_PER_DAY, routines.length);
+  const capacity = days * perDayCap;
+  if (routines.length > capacity) {
+    throw new StudyInputError("That is more subjects than the days before the test can hold. Pick fewer subjects or a later test date.");
+  }
   const wanted = Math.round(((input.weeklyHours * 60) / SESSION_MINUTES) * (days / 7));
-  const total = Math.max(1, Math.min(wanted, days * perDayCap));
+  // Every chosen subject gets at least one session.
+  const total = Math.min(Math.max(wanted, routines.length), capacity);
   const seen = new Map<string, number>();
   const sessions: StudySession[] = [];
 
   for (let k = 0; k < total; k += 1) {
-    const day = Math.floor((k * days) / total);
+    // Anchored to the end so the last session always lands the day before the test.
+    const day = days - 1 - Math.floor(((total - 1 - k) * days) / total);
     const routine = routines[k % routines.length]!;
     const count = seen.get(routine.subject) ?? 0;
     seen.set(routine.subject, count + 1);
@@ -104,13 +110,24 @@ function fold(line: string): string {
   return parts.join("\r\n");
 }
 
+/** FNV-1a hash of the plan, so different plans get different event IDs and re-importing the same plan updates it. */
+function planId(plan: readonly StudySession[]): string {
+  let hash = 0x811c9dc5;
+  for (const ch of plan.map((s) => `${s.date}|${s.subject}|${s.kind}`).join(";")) {
+    hash ^= ch.charCodeAt(0);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return hash.toString(16).padStart(8, "0");
+}
+
 export function planToIcs(plan: readonly StudySession[]): string {
   const compact = (iso: string) => iso.replace(/-/g, "");
+  const id = planId(plan);
   const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Niall Highland//Study Lab//EN", "CALSCALE:GREGORIAN"];
   plan.forEach((s, i) => {
     lines.push(
       "BEGIN:VEVENT",
-      `UID:study-${i + 1}-${compact(s.date)}@niallhighland.com`,
+      `UID:study-${id}-${i + 1}@niallhighland.com`,
       `DTSTAMP:${compact(plan[0]!.date)}T000000Z`,
       `DTSTART;VALUE=DATE:${compact(s.date)}`,
       `DTEND;VALUE=DATE:${compact(addDays(s.date, 1))}`,
