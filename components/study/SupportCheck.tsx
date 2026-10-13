@@ -86,7 +86,7 @@ export function SupportCheck() {
                   <div className="flex flex-wrap items-center justify-between gap-[var(--space-2)]">
                     <p className="font-display text-[length:var(--text-h3)] text-[color:var(--text)]">{a.label}</p>
                     <span
-                      className={`rounded-full border px-[var(--space-3)] py-[var(--space-1)] font-mono text-[var(--text-caption)] uppercase tracking-[var(--tracking-label)] ${CHIP[a.level]}`}
+                      className={`rounded-full border px-[var(--space-3)] py-[var(--space-1)] font-mono text-[length:var(--text-caption)] uppercase tracking-[var(--tracking-label)] ${CHIP[a.level]}`}
                     >
                       {LEVEL_LABEL[a.level]}
                     </span>

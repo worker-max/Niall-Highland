@@ -35,7 +35,7 @@ function Countdown({ seconds, onDone }: { seconds: number; onDone: () => void })
     return () => window.clearTimeout(id);
   }, [left, onDone]);
   return (
-    <span className="font-mono text-[var(--text-caption)] tabular-nums text-[color:var(--text-faint)]" aria-live="off">
+    <span className="font-mono text-[length:var(--text-caption)] tabular-nums text-[color:var(--text-faint)]" aria-live="off">
       {left}s left
     </span>
   );

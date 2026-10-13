@@ -185,7 +185,7 @@ export function RoutineBuilder() {
               aria-label="Plan as text"
               value={planToText(plan)}
               rows={4}
-              className={`${field} w-full font-mono text-[var(--text-caption)]`}
+              className={`${field} w-full font-mono text-[length:var(--text-caption)]`}
             />
             <p className={muted}>
               Every session follows the engine: retrieve, space, explain, mix. Use the routine for each subject from the table

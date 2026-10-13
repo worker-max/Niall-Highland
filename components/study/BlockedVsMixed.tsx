@@ -153,7 +153,7 @@ export function BlockedVsMixed() {
             </p>
             <ul className="flex flex-col gap-[var(--space-2)]">
               {PROBLEM_TYPES.map((t) => (
-                <li key={t} className="font-mono text-[var(--text-caption)] uppercase tracking-[var(--tracking-label)] text-[color:var(--text)]">
+                <li key={t} className="font-mono text-[length:var(--text-caption)] uppercase tracking-[var(--tracking-label)] text-[color:var(--text)]">
                   {FORMULA_TEXT[t]}
                 </li>
               ))}

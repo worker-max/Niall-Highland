@@ -141,7 +141,7 @@ export function CramVsSpace() {
                   aria-pressed={on}
                   aria-label={`Day ${d}`}
                   onClick={() => setDays((current) => toggleSessionDay(current, d))}
-                  className={`rounded-[4px] border py-[var(--space-2)] font-mono text-[var(--text-caption)] tabular-nums focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--accent)] ${
+                  className={`rounded-[4px] border py-[var(--space-2)] font-mono text-[length:var(--text-caption)] tabular-nums focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--accent)] ${
                     on
                       ? "border-[color:var(--accent)] bg-[color:var(--accent)] text-[color:var(--surface)]"
                       : "border-[color:var(--border)] text-[color:var(--text-muted)]"
